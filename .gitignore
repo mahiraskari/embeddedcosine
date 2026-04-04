@@ -1,0 +1,59 @@
+# ── Claude Code ──────────────────────────────────────────
+.claude/
+
+# ── Python ───────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pycache
+.Python
+*.egg-info/
+dist/
+build/
+*.whl
+
+# ── Virtual environments ──────────────────────────────────
+venv/
+.venv/
+env/
+.env/
+ENV/
+
+# ── Environment / secrets ─────────────────────────────────
+.env
+.env.local
+.env.*.local
+# .env.example is committed on purpose — it has no real values
+
+# ── Data files (often large, not source code) ─────────────
+data/*.csv
+data/*.json
+data/*.parquet
+data/*.sqlite
+data/*.db
+
+# ── Vector index files (generated, large) ─────────────────
+*.faiss
+*.index
+backend/indexes/
+
+# ── Model cache (downloaded by sentence-transformers) ─────
+backend/model_cache/
+.cache/
+
+# ── Frontend build artifacts ──────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# ── IDE / OS ──────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

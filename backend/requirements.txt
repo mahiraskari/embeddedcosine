@@ -1,0 +1,22 @@
+# ── Web framework ─────────────────────────────────────────
+fastapi
+uvicorn[standard]        # ASGI server that runs FastAPI
+python-multipart         # needed for file upload endpoints
+
+# ── Data handling ─────────────────────────────────────────
+pandas                   # load, inspect, and transform CSV data
+numpy                    # numerical array operations (embeddings are numpy arrays)
+
+# ── Embeddings (runs 100% locally, no API key needed) ─────
+sentence-transformers    # wraps HuggingFace models; gives you .encode(text) -> vector
+
+# ── Vector similarity search ──────────────────────────────
+faiss-cpu                # Facebook's fast nearest-neighbour index (CPU version)
+
+# ── Dimensionality reduction (384D -> 2D for the map) ──────
+umap-learn               # UMAP algorithm
+scikit-learn             # UMAP depends on this; also useful for PCA later
+
+# ── Config / utilities ────────────────────────────────────
+python-dotenv            # loads .env file into environment variables
+pydantic                 # data validation for API request/response models (FastAPI uses this)
