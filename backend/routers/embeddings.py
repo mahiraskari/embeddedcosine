@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from services.loader import load_games
 from services.embedder import embed_texts
 from services.indexer import build_index
+from services.reducer import reduce
 
 router = APIRouter(prefix="/embeddings", tags=["embeddings"])
 
@@ -41,6 +42,21 @@ def build_faiss_index():
 
     index = build_index()
     return {"status": "done", "vectors_indexed": index.ntotal}
+
+
+@router.post("/reduce")
+def run_reduction():
+    if not os.path.exists(EMBEDDINGS_PATH):
+        return {"status": "error", "detail": "Run /embeddings/generate first"}
+
+    coords_2d = reduce(n_components=2)
+    coords_3d = reduce(n_components=3)
+
+    return {
+        "status": "done",
+        "shape_2d": list(coords_2d.shape),
+        "shape_3d": list(coords_3d.shape),
+    }
 
 
 @router.get("/status")
