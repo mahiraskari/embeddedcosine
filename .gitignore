@@ -33,10 +33,11 @@ data/*.parquet
 data/*.sqlite
 data/*.db
 
-# ── Vector index files (generated, large) ─────────────────
+# ── Generated files (embeddings, indexes) — reproducible, not source code ─────
 *.faiss
 *.index
-backend/indexes/
+*.npy
+backend/data/
 
 # ── Model cache (downloaded by sentence-transformers) ─────
 backend/model_cache/
