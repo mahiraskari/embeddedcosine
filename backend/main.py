@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import dataset, embeddings
+from routers import dataset, embeddings, map
 
 app = FastAPI(
     title="embeddedcosine",
@@ -20,6 +20,7 @@ app.add_middleware(
 
 app.include_router(dataset.router)
 app.include_router(embeddings.router)
+app.include_router(map.router)
 
 
 @app.get("/")
