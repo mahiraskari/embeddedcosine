@@ -25,7 +25,7 @@ def get_points(dims: int = 2):
     points = []
     for i, meta in enumerate(metadata):
         point = dict(meta)
-        point["x"] = float(coords[i][0])
+        point["x"] = float(coords[i][0])    
         point["y"] = float(coords[i][1])
         if dims == 3:
             point["z"] = float(coords[i][2])

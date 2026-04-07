@@ -7,6 +7,30 @@ import * as THREE from "three";
 
 const DARK = "#0f0f0f";
 
+// ── Shared hover tooltip ──────────────────────────────────────────────────────
+
+function TooltipCard({ point }) {
+    return (
+        <div style={{
+            background: "rgba(10, 10, 16, 0.97)",
+            border: "1px solid rgba(99, 102, 241, 0.35)",
+            borderRadius: 8,
+            padding: "6px 12px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.75), 0 0 0 1px rgba(99,102,241,0.08)",
+            pointerEvents: "none",
+            userSelect: "none",
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            color: "#f0f0f8",
+            fontSize: 13,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+            letterSpacing: "-0.01em",
+        }}>
+            {point.Name}
+        </div>
+    );
+}
+
 function hslToHex(h, s, l) {
     s /= 100; l /= 100;
     const a = s * Math.min(l, 1 - l);
@@ -157,7 +181,7 @@ function PointCloud({ points }) {
                     <bufferAttribute attach="attributes-color"    args={[colors, 3]}    />
                 </bufferGeometry>
                 <pointsMaterial
-                    size={2.5}
+                    size={4.5}
                     vertexColors
                     sizeAttenuation={false}
                     transparent
@@ -172,20 +196,8 @@ function PointCloud({ points }) {
                     style={{ pointerEvents: "none" }}
                     zIndexRange={[100, 0]}
                 >
-                    <div style={{
-                        background: "rgba(10,10,10,0.9)",
-                        color: "#e2e2e2",
-                        padding: "5px 10px",
-                        borderRadius: 6,
-                        fontSize: 12,
-                        fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
-                        border: "1px solid #2a2a2a",
-                        whiteSpace: "nowrap",
-                        transform: "translateY(-180%)",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.6)",
-                        userSelect: "none",
-                    }}>
-                        {hoveredPoint.Name}
+                    <div style={{ transform: "translateY(-115%) translateX(10px)" }}>
+                        <TooltipCard point={hoveredPoint} />
                     </div>
                 </Html>
             )}
@@ -252,7 +264,7 @@ function Scene3D({ points }) {
 
 // ── 2D: Plotly scattergl + Voronoi background ─────────────────────────────────
 
-function Scene2D({ points }) {
+function Scene2D({ points, showVoronoi }) {
     const mainRef        = useRef(null);
     const voronoiRef     = useRef(null);
     const zoomCanvasRef  = useRef(null);
@@ -261,8 +273,9 @@ function Scene2D({ points }) {
     const voronoiDataRef = useRef(null);
     const canvasSizeRef  = useRef({ w: 0, h: 0 }); // cached — updated by ResizeObserver only
     const dataBoundsRef  = useRef(null);
-    const [showVoronoi, setShowVoronoi] = useState(true);
     const showVoronoiRef = useRef(true);
+    const [hovered2D, setHovered2D]     = useState(null);
+    const tooltipRef                    = useRef(null);
 
     const drawVoronoi = () => {
         if (!showVoronoiRef.current) return;
@@ -332,7 +345,7 @@ function Scene2D({ points }) {
         const x      = points.map(p => p.x);
         const y      = points.map(p => p.y);
         const text   = points.map(p => p.Name);
-        const colors = points.map(() => "#6366f1");
+        const colors = getColors(points);
 
         const minX = Math.min(...x), maxX = Math.max(...x);
         const minY = Math.min(...y), maxY = Math.max(...y);
@@ -378,12 +391,12 @@ function Scene2D({ points }) {
             type: "scattergl",
             mode: "markers",
             x, y, text,
-            hovertemplate: "<b>%{text}</b><extra></extra>",
+            hoverinfo: "none",
             marker: {
                 size: 4,
                 symbol: "square",
                 opacity: 0.9,
-                color: "#6366f1",
+                color: colors,
             },
         }], {
             autosize: true,
@@ -395,6 +408,23 @@ function Scene2D({ points }) {
             yaxis: { showgrid: false, zeroline: false, showticklabels: false, showspikes: false, range: [db.minY, db.maxY] },
             margin: { l: 0, r: 0, t: 0, b: 0 },
         }, { displayModeBar: false, responsive: true, scrollZoom: true, doubleClick: "reset" });
+
+        // Custom 2D tooltip via Plotly hover events + mouse tracking
+        const onPlotlyHover = (data) => {
+            const idx = data.points[0]?.pointIndex;
+            if (idx !== undefined) setHovered2D(points[idx]);
+        };
+        const onPlotlyUnhover = () => setHovered2D(null);
+        mainRef.current.on("plotly_hover",   onPlotlyHover);
+        mainRef.current.on("plotly_unhover", onPlotlyUnhover);
+
+        const onMouseMove = (e) => {
+            if (!tooltipRef.current) return;
+            const rect = mainRef.current.getBoundingClientRect();
+            tooltipRef.current.style.left = `${e.clientX - rect.left + 18}px`;
+            tooltipRef.current.style.top  = `${e.clientY - rect.top  - 14}px`;
+        };
+        mainRef.current.addEventListener("mousemove", onMouseMove);
 
         // rAF loop — redraws only when axis range actually changes
         const loop = () => {
@@ -480,6 +510,7 @@ function Scene2D({ points }) {
                 mainRef.current.removeEventListener("mousedown",   onRightDown);
                 mainRef.current.removeEventListener("contextmenu", onContextMenu);
                 mainRef.current.removeEventListener("wheel",       onWheel, { capture: true });
+                mainRef.current.removeEventListener("mousemove",   onMouseMove);
                 Plotly.purge(mainRef.current);
             }
             window.removeEventListener("mousemove", onRightMove);
@@ -492,30 +523,27 @@ function Scene2D({ points }) {
             <canvas ref={voronoiRef}    style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }} />
             <div   ref={mainRef}        style={{ position: "absolute", inset: 0, zIndex: 1 }} />
             <canvas ref={zoomCanvasRef} style={{ position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none" }} />
-            <button
-                onClick={() => setShowVoronoi(v => !v)}
-                style={{
-                    position: "absolute", top: 16, left: 16, zIndex: 10,
-                    background: showVoronoi ? "rgba(99,102,241,0.15)" : "rgba(10,10,10,0.85)",
-                    border: `1px solid ${showVoronoi ? "#6366f1" : "#2a2a2a"}`,
-                    color: showVoronoi ? "#a5b4fc" : "#888",
-                    padding: "5px 12px", borderRadius: 6, fontSize: 12,
-                    cursor: "pointer", transition: "all 0.15s",
-                }}
-            >
-                Voronoi
-            </button>
+            <div ref={tooltipRef} style={{
+                position: "absolute",
+                zIndex: 20,
+                pointerEvents: "none",
+                display: hovered2D ? "block" : "none",
+                left: 0,
+                top: 0,
+            }}>
+                {hovered2D && <TooltipCard point={hovered2D} />}
+            </div>
         </div>
     );
 }
 
 // ── Root ─────────────────────────────────────────────────────────────────────
 
-export default function MapView({ points, dims }) {
+export default function MapView({ points, dims, showVoronoi }) {
     if (!points || points.length === 0) {
         return <div className="map-empty">No data loaded.</div>;
     }
     return dims === 3
         ? <Scene3D points={points} />
-        : <Scene2D points={points} />;
+        : <Scene2D points={points} showVoronoi={showVoronoi} />;
 }

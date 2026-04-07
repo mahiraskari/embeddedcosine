@@ -7,6 +7,7 @@ export default function App() {
     const [points, setPoints] = useState([]);
     const [dims, setDims] = useState(2);
     const [loading, setLoading] = useState(true);
+    const [showVoronoi, setShowVoronoi] = useState(true);
 
     useEffect(() => {
         setLoading(true);
@@ -22,17 +23,27 @@ export default function App() {
                 <div className="dim-toggle">
                     <button
                         className={dims === 2 ? "active" : ""}
-                        onClick={() => setDims(2)}
+                        onClick={() => { setDims(2); setLoading(true); }}
                     >
                         2D
                     </button>
                     <button
                         className={dims === 3 ? "active" : ""}
-                        onClick={() => setDims(3)}
+                        onClick={() => { setDims(3); setLoading(true); }}
                     >
                         3D
                     </button>
                 </div>
+                {dims === 2 && (
+                    <div className="dim-toggle">
+                        <button
+                            className={showVoronoi ? "active" : ""}
+                            onClick={() => setShowVoronoi(v => !v)}
+                        >
+                            Voronoi
+                        </button>
+                    </div>
+                )}
             </header>
 
             <main className="main">
@@ -40,7 +51,7 @@ export default function App() {
                     {loading ? (
                         <div className="loading">Loading map...</div>
                     ) : (
-                        <MapView points={points} dims={dims} />
+                        <MapView points={points} dims={dims} showVoronoi={showVoronoi} />
                     )}
                 </div>
             </main>
