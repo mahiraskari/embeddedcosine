@@ -6,8 +6,8 @@ COORDS_2D_PATH = "data/coords_2d.npy"
 COORDS_3D_PATH = "data/coords_3d.npy"
 
 
-def reduce(n_components: int) -> np.ndarray:
-    embeddings = np.load(EMBEDDINGS_PATH).astype(np.float32)
+def reduce(n_components: int, data_dir: str = "data") -> np.ndarray:
+    embeddings = np.load(f"{data_dir}/embeddings.npy").astype(np.float32)
 
     reducer = umap.UMAP(
         n_components=n_components,
@@ -20,7 +20,7 @@ def reduce(n_components: int) -> np.ndarray:
 
     coords = reducer.fit_transform(embeddings)
 
-    path = COORDS_2D_PATH if n_components == 2 else COORDS_3D_PATH
+    path = f"{data_dir}/coords_{n_components}d.npy"
     np.save(path, coords)
 
     return coords

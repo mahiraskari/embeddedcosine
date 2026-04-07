@@ -138,12 +138,15 @@ function FPSLook({ controlsRef }) {
 
 // ── 3D: point cloud with hover tooltip ───────────────────────────────────────
 
-function PointCloud({ points }) {
+function PointCloud({ points, searchResults }) {
     const [hovered, setHovered] = useState(null);
     const hideTimer = useRef(null);
     const hexColors = useMemo(() => getColors(points), [points]);
 
     const [positions, colors] = useMemo(() => {
+        const matchNames = searchResults && searchResults.length > 0
+            ? new Set(searchResults.map(r => r.Name))
+            : null;
         const pos = new Float32Array(points.length * 3);
         const col = new Float32Array(points.length * 3);
         const c = new THREE.Color();
@@ -151,13 +154,14 @@ function PointCloud({ points }) {
             pos[i * 3]     = p.x;
             pos[i * 3 + 1] = p.y;
             pos[i * 3 + 2] = p.z;
-            c.set(hexColors[i]);
+            const hex = (!matchNames || matchNames.has(p.Name)) ? hexColors[i] : "#111118";
+            c.set(hex);
             col[i * 3]     = c.r;
             col[i * 3 + 1] = c.g;
             col[i * 3 + 2] = c.b;
         });
         return [pos, col];
-    }, [points, hexColors]);
+    }, [points, hexColors, searchResults]);
 
     const hoveredPoint = hovered !== null ? points[hovered] : null;
 
@@ -223,7 +227,7 @@ function CameraReset({ controlsRef, cx, cy, cz, d }) {
     return null;
 }
 
-function Scene3D({ points }) {
+function Scene3D({ points, searchResults }) {
     const { cx, cy, cz, span } = useBounds(points);
     const d = span * 0.75;
     const controlsRef = useRef();
@@ -236,7 +240,7 @@ function Scene3D({ points }) {
             style={{ width: "100%", height: "100%" }}
         >
             <color attach="background" args={[DARK]} />
-            <PointCloud points={points} />
+            <PointCloud points={points} searchResults={searchResults} />
             <OrbitControls
                 ref={controlsRef}
                 makeDefault
@@ -264,7 +268,7 @@ function Scene3D({ points }) {
 
 // ── 2D: Plotly scattergl + Voronoi background ─────────────────────────────────
 
-function Scene2D({ points, showVoronoi }) {
+function Scene2D({ points, showVoronoi, searchResults }) {
     const mainRef        = useRef(null);
     const voronoiRef     = useRef(null);
     const zoomCanvasRef  = useRef(null);
@@ -276,6 +280,8 @@ function Scene2D({ points, showVoronoi }) {
     const showVoronoiRef = useRef(true);
     const [hovered2D, setHovered2D]     = useState(null);
     const tooltipRef                    = useRef(null);
+
+    const baseColors = useMemo(() => getColors(points), [points]);
 
     const drawVoronoi = () => {
         if (!showVoronoiRef.current) return;
@@ -303,10 +309,9 @@ function Scene2D({ points, showVoronoi }) {
         ctx.rect(x0, y0, x1 - x0, y1 - y0);
         ctx.clip();
 
-        // Only draw cells whose seed is within/near the viewport — culls off-screen work
         const mx = (x1 - x0) * 0.3;
         const my = (y1 - y0) * 0.3;
-        const { voronoi, hexColors } = vd;
+        const { voronoi } = vd;
 
         for (let i = 0; i < points.length; i++) {
             const px = toX(points[i].x);
@@ -328,7 +333,7 @@ function Scene2D({ points, showVoronoi }) {
         ctx.restore();
     };
 
-    // Keep ref in sync so drawVoronoi (called from rAF) sees current toggle state
+    // Keep ref in sync so drawVoronoi sees current toggle state
     useEffect(() => {
         showVoronoiRef.current = showVoronoi;
         if (!showVoronoi) {
@@ -345,7 +350,7 @@ function Scene2D({ points, showVoronoi }) {
         const x      = points.map(p => p.x);
         const y      = points.map(p => p.y);
         const text   = points.map(p => p.Name);
-        const colors = getColors(points);
+        const colors = baseColors;
 
         const minX = Math.min(...x), maxX = Math.max(...x);
         const minY = Math.min(...y), maxY = Math.max(...y);
@@ -426,7 +431,7 @@ function Scene2D({ points, showVoronoi }) {
         };
         mainRef.current.addEventListener("mousemove", onMouseMove);
 
-        // rAF loop — redraws only when axis range actually changes
+        // rAF loop — schedules a debounced redraw when axis range changes
         const loop = () => {
             const fl = mainRef.current?._fullLayout;
             if (fl) {
@@ -518,6 +523,21 @@ function Scene2D({ points, showVoronoi }) {
         };
     }, [points]);
 
+    // Highlight search results by dimming non-matching points
+    useEffect(() => {
+        if (!mainRef.current?._fullLayout) return;
+        let colors;
+        if (searchResults && searchResults.length > 0) {
+            const matchNames = new Set(searchResults.map(r => r.Name));
+            colors = points.map((p, i) =>
+                matchNames.has(p.Name) ? baseColors[i] : "rgba(255,255,255,0.08)"
+            );
+        } else {
+            colors = baseColors;
+        }
+        Plotly.restyle(mainRef.current, { "marker.color": [colors] }, [0]);
+    }, [searchResults]);
+
     return (
         <div style={{ width: "100%", height: "100%", position: "relative", background: DARK }}>
             <canvas ref={voronoiRef}    style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }} />
@@ -539,11 +559,11 @@ function Scene2D({ points, showVoronoi }) {
 
 // ── Root ─────────────────────────────────────────────────────────────────────
 
-export default function MapView({ points, dims, showVoronoi }) {
+export default function MapView({ points, dims, showVoronoi, searchResults }) {
     if (!points || points.length === 0) {
         return <div className="map-empty">No data loaded.</div>;
     }
     return dims === 3
-        ? <Scene3D points={points} />
-        : <Scene2D points={points} showVoronoi={showVoronoi} />;
+        ? <Scene3D points={points} searchResults={searchResults} />
+        : <Scene2D points={points} showVoronoi={showVoronoi} searchResults={searchResults} />;
 }

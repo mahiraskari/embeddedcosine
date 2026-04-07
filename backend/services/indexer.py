@@ -5,8 +5,8 @@ EMBEDDINGS_PATH = "data/embeddings.npy"
 INDEX_PATH = "data/index.faiss"
 
 
-def build_index() -> faiss.Index:
-    embeddings = np.load(EMBEDDINGS_PATH)
+def build_index(data_dir: str = "data") -> faiss.Index:
+    embeddings = np.load(f"{data_dir}/embeddings.npy")
 
     # FAISS requires float32 — our embeddings might be float64
     embeddings = embeddings.astype(np.float32)
@@ -20,13 +20,13 @@ def build_index() -> faiss.Index:
     index.add(embeddings)
 
     # Save to disk
-    faiss.write_index(index, INDEX_PATH)
+    faiss.write_index(index, f"{data_dir}/index.faiss")
 
     return index
 
 
-def load_index() -> faiss.Index:
-    return faiss.read_index(INDEX_PATH)
+def load_index(data_dir: str = "data") -> faiss.Index:
+    return faiss.read_index(f"{data_dir}/index.faiss")
 
 
 def search(index: faiss.Index, query_vector: np.ndarray, k: int = 5): # returns top k scores and indices
