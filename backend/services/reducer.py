@@ -11,8 +11,9 @@ def reduce(n_components: int) -> np.ndarray:
 
     reducer = umap.UMAP(
         n_components=n_components,
-        n_neighbors=15,
-        min_dist=0.1,
+        n_neighbors=25,
+        min_dist=0.4,
+        spread=1.5,
         metric="cosine",
         random_state=42,
     )

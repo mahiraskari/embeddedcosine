@@ -19,8 +19,6 @@ CSV_COLUMNS = [
 
 
 def load_from_csv() -> pd.DataFrame:
-    # on_bad_lines='skip' drops any row where the column count doesn't match
-    # instead of trying to parse it wrong
     df = pd.read_csv(
         CSV_PATH,
         usecols=CSV_COLUMNS,
@@ -33,7 +31,7 @@ def load_from_csv() -> pd.DataFrame:
     df = df[df["AppID"].apply(lambda x: x == int(x))]
     df["AppID"] = df["AppID"].astype(int)
     df = df[df["About the game"].str.strip() != ""]
-    df = df[df["Positive"] >= 1000]
+    df = df[df["Positive"] >= 10000]
     df = df.rename(columns={"About the game": "description", "Header image": "image"})
     df = df.fillna("")
 
@@ -50,12 +48,13 @@ def load_from_json() -> pd.DataFrame:
 
     df = df.dropna(subset=["about_the_game", "name"])
     df = df[df["about_the_game"].str.strip() != ""]
-    df = df[df["positive"] >= 1000]
+    df = df[df["positive"] >= 10000]
 
     df["genres"] = df["genres"].apply(lambda x: ", ".join(x) if isinstance(x, list) else "")
     df["developers"] = df["developers"].apply(lambda x: ", ".join(x) if isinstance(x, list) else "")
     # tags is a dict of {tag: vote_count} — we just want the tag names
     df["tags"] = df["tags"].apply(lambda x: ", ".join(x.keys()) if isinstance(x, dict) else "")
+
 
     df = df.rename(columns={
         "name": "Name",
