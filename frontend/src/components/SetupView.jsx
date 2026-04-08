@@ -1,15 +1,8 @@
 import { useState, useRef } from "react";
-import { uploadDataset, configureDataset, runPipeline } from "../api/client";
+import { uploadDataset, configureDataset, PIPELINE_STREAM_URL } from "../api/client";
 
 const STEPS = ["Upload", "Configure", "Build"];
 
-function formatEta(seconds) {
-    if (seconds < 5)  return "almost done…";
-    if (seconds < 60) return `~${Math.round(seconds)}s remaining`;
-    const m = Math.floor(seconds / 60);
-    const s = Math.round(seconds % 60);
-    return s > 0 ? `~${m}m ${s}s remaining` : `~${m}m remaining`;
-}
 
 export default function SetupView({ onDone, onBack }) {
     const [step, setStep]           = useState(0);
@@ -17,14 +10,28 @@ export default function SetupView({ onDone, onBack }) {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [building, setBuilding]   = useState(false);
     const [progress, setProgress]   = useState(0);
-    const [elapsed, setElapsed]     = useState(0);
+    const [stageLabel, setStageLabel] = useState("");
     const [error, setError]         = useState(null);
     const progressRef               = useRef(null);
-    const startTimeRef              = useRef(null);
+    const esRef                     = useRef(null);
     const [uploadInfo, setUploadInfo] = useState(null);
     const [nameCol, setNameCol]     = useState("");
-    const [textCol, setTextCol]     = useState("");
+    const [embedCols, setEmbedCols] = useState([]);
     const fileRef                   = useRef(null);
+
+    const toggleEmbedCol = (col) => {
+        setEmbedCols(prev =>
+            prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col]
+        );
+    };
+
+    // Build preview of combined embed text for a row
+    const previewEmbedText = (row) => {
+        const parts = embedCols
+            .map(c => String(row[c] ?? "").trim())
+            .filter(Boolean);
+        return parts.join(" | ");
+    };
 
     const handleUpload = async (e) => {
         const file = e.target.files[0];
@@ -35,15 +42,17 @@ export default function SetupView({ onDone, onBack }) {
         try {
             const data = await uploadDataset(file, setUploadProgress);
             setUploadInfo(data);
-            // Guess sensible defaults — coerce to string in case columns are numeric
+            // Guess sensible defaults
             const cols = data.columns.map(c => String(c).toLowerCase());
             const nameGuess = data.columns[cols.findIndex(c =>
                 c.includes("name") || c.includes("title"))] || data.columns[0];
-            const textGuess = data.columns[cols.findIndex(c =>
-                c.includes("desc") || c.includes("about") || c.includes("summary") || c.includes("text"))]
-                || data.columns[1] || data.columns[0];
+            // Pre-check columns that look like useful text fields
+            const textKeywords = ["desc", "about", "summary", "text", "overview", "plot", "synopsis", "genre", "tag", "category", "type"];
+            const autoEmbed = data.columns.filter(c =>
+                textKeywords.some(kw => String(c).toLowerCase().includes(kw))
+            );
             setNameCol(nameGuess);
-            setTextCol(textGuess);
+            setEmbedCols(autoEmbed.length > 0 ? autoEmbed : [data.columns[1] || data.columns[0]]);
             setStep(1);
         } catch (err) {
             setError(err.response?.data?.detail || err.message || "Upload failed — is the backend running?");
@@ -53,41 +62,73 @@ export default function SetupView({ onDone, onBack }) {
 
     const handleConfigure = async () => {
         setError(null);
+        if (embedCols.length === 0) {
+            setError("Select at least one column to embed.");
+            return;
+        }
         try {
-            await configureDataset(nameCol, textCol);
+            await configureDataset(nameCol, embedCols);
             setStep(2);
         } catch (err) {
             setError(err.response?.data?.detail || "Configuration failed");
         }
     };
 
-    const handleBuild = async () => {
+    const handleBuild = () => {
         setError(null);
         setBuilding(true);
         setProgress(0);
-        setElapsed(0);
-        startTimeRef.current = Date.now();
+        setStageLabel("Starting…");
 
-        let pct = 0;
-        progressRef.current = setInterval(() => {
-            const elapsedSec = (Date.now() - startTimeRef.current) / 1000;
-            setElapsed(elapsedSec);
-            const step = (92 - pct) * 0.012;
-            pct = Math.min(92, pct + Math.max(step, 0.08));
-            setProgress(pct);
-        }, 400);
+        if (progressRef.current) clearInterval(progressRef.current);
+        if (esRef.current) esRef.current.close();
 
-        try {
-            await runPipeline();
-            clearInterval(progressRef.current);
-            setProgress(100);
-            setTimeout(onDone, 500);
-        } catch (err) {
-            clearInterval(progressRef.current);
-            setProgress(0);
-            setError(err.response?.data?.detail || "Pipeline failed");
+        const es = new EventSource(PIPELINE_STREAM_URL);
+        esRef.current = es;
+
+        // Slowly drift progress during slow stages (UMAP) so bar never freezes
+        const startDrift = (from, ceiling) => {
+            if (progressRef.current) clearInterval(progressRef.current);
+            let cur = from;
+            progressRef.current = setInterval(() => {
+                cur = Math.min(ceiling, cur + 0.06);
+                setProgress(cur);
+                if (cur >= ceiling) clearInterval(progressRef.current);
+            }, 1000);
+        };
+
+        es.onmessage = (evt) => {
+            const data = JSON.parse(evt.data);
+
+            if (data.stage === "error") {
+                es.close();
+                if (progressRef.current) clearInterval(progressRef.current);
+                setError(data.label);
+                setBuilding(false);
+                return;
+            }
+
+            // Real progress event — stop any drift ticker and jump to real value
+            if (progressRef.current) { clearInterval(progressRef.current); progressRef.current = null; }
+            setProgress(data.pct);
+            setStageLabel(data.label);
+
+            // During UMAP stages we won't get sub-events, so drift slowly
+            if (data.stage === "umap2d") startDrift(data.pct, 89);
+            if (data.stage === "umap3d") startDrift(data.pct, 99);
+
+            if (data.stage === "done") {
+                es.close();
+                setTimeout(onDone, 500);
+            }
+        };
+
+        es.onerror = () => {
+            es.close();
+            if (progressRef.current) clearInterval(progressRef.current);
+            setError("Pipeline failed — check the backend logs");
             setBuilding(false);
-        }
+        };
     };
 
     return (
@@ -128,10 +169,7 @@ export default function SetupView({ onDone, onBack }) {
                 {step === 0 && (
                     <div style={styles.section}>
                         <p style={styles.hint}>
-                            Upload a CSV or JSON file to get started.{" "}
-                            <a href="/sample_dataset.csv" download style={{ color: "#6366f1", textDecoration: "none" }}>
-                                Download a sample dataset ↓
-                            </a>
+                            Upload a CSV or JSON file to get started.
                         </p>
                         <div
                             style={styles.dropzone}
@@ -180,25 +218,40 @@ export default function SetupView({ onDone, onBack }) {
                         </div>
 
                         <div style={styles.fieldGroup}>
-                            <label style={styles.label}>Text to embed</label>
-                            <p style={styles.fieldHint}>The column with the rich text used to compute similarity (e.g. description, summary)</p>
-                            <select style={styles.select} value={textCol} onChange={e => setTextCol(e.target.value)}>
-                                {uploadInfo.columns.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
+                            <label style={styles.label}>Columns to embed</label>
+                            <p style={styles.fieldHint}>Select one or more columns — they will be combined into a single embedding (e.g. description + genres)</p>
+                            <div style={styles.checkboxList}>
+                                {uploadInfo.columns.map(c => (
+                                    <label key={c} style={styles.checkboxRow}>
+                                        <input
+                                            type="checkbox"
+                                            checked={embedCols.includes(c)}
+                                            onChange={() => toggleEmbedCol(c)}
+                                            style={styles.checkbox}
+                                        />
+                                        <span style={{ color: embedCols.includes(c) ? "#a5b4fc" : "#555", fontSize: 12 }}>{c}</span>
+                                    </label>
+                                ))}
+                            </div>
                         </div>
 
                         {/* Preview */}
+                        {embedCols.length > 0 && (
                         <div style={styles.previewBox}>
-                            <p style={styles.previewTitle}>Preview</p>
-                            {uploadInfo.preview.slice(0, 3).map((row, i) => (
-                                <div key={i} style={styles.previewRow}>
-                                    <span style={styles.previewName}>{String(row[nameCol] ?? "—")}</span>
-                                    <span style={styles.previewText}>
-                                        {String(row[textCol] ?? "—").slice(0, 120)}{String(row[textCol] ?? "").length > 120 ? "…" : ""}
-                                    </span>
-                                </div>
-                            ))}
+                            <p style={styles.previewTitle}>Preview — combined embed text</p>
+                            {uploadInfo.preview.slice(0, 3).map((row, i) => {
+                                const combined = previewEmbedText(row);
+                                return (
+                                    <div key={i} style={styles.previewRow}>
+                                        <span style={styles.previewName}>{String(row[nameCol] ?? "—")}</span>
+                                        <span style={styles.previewText}>
+                                            {combined.slice(0, 160)}{combined.length > 160 ? "…" : ""}
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
+                        )}
 
                         <button style={styles.btn} onClick={handleConfigure}>
                             Confirm →
@@ -212,12 +265,7 @@ export default function SetupView({ onDone, onBack }) {
                         {building ? (
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                                    <span style={{ fontSize: 11, color: "#555" }}>
-                                        {progress < 30 ? "Embedding text…"
-                                        : progress < 70 ? "Building FAISS index…"
-                                        : progress < 92 ? "Running UMAP reduction…"
-                                        : "Finalising…"}
-                                    </span>
+                                    <span style={{ fontSize: 11, color: "#555" }}>{stageLabel}</span>
                                     <span style={{ fontSize: 11, color: "#444", fontVariantNumeric: "tabular-nums" }}>
                                         {Math.round(progress)}%
                                     </span>
@@ -225,11 +273,6 @@ export default function SetupView({ onDone, onBack }) {
                                 <div style={styles.progressTrack}>
                                     <div style={{ ...styles.progressBar, width: `${progress}%` }} />
                                 </div>
-                                <span style={{ fontSize: 11, color: "#333" }}>
-                                    {progress > 4 && elapsed > 2
-                                        ? formatEta(elapsed * (100 - progress) / progress)
-                                        : "Estimating time…"}
-                                </span>
                             </div>
                         ) : (
                             <button style={styles.btn} onClick={handleBuild}>
@@ -326,6 +369,29 @@ const styles = {
         padding: "7px 10px",
         fontSize: 12,
         outline: "none",
+    },
+    checkboxList: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        background: "#08080f",
+        border: "1px solid #1e1e30",
+        borderRadius: 2,
+        padding: "10px 12px",
+        maxHeight: 180,
+        overflowY: "auto",
+    },
+    checkboxRow: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        cursor: "pointer",
+    },
+    checkbox: {
+        accentColor: "#6366f1",
+        width: 13,
+        height: 13,
+        cursor: "pointer",
     },
     previewBox: {
         background: "#08080f",

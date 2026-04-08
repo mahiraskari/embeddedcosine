@@ -192,7 +192,7 @@ function DemoSearch() {
                     <input
                         className="demo-query-input"
                         type="text"
-                        placeholder="e.g. open world RPG with rich story"
+                        placeholder="e.g. nausea and vomiting"
                         value={query}
                         onChange={e => setQuery(e.target.value)}
                     />
@@ -290,14 +290,14 @@ function LiveDemo({ navigate }) {
             {/* Controls bar */}
             <div className="live-demo-bar">
                 <div className="live-demo-bar-left">
-                    <span className="live-demo-bar-title">embeddedcosine · Movies & TV</span>
+                    <span className="live-demo-bar-title">embeddedcosine · Drug Side Effects</span>
                 </div>
                 <div className="live-demo-bar-right">
                     <form className="live-demo-search" onSubmit={handleSearch}>
                         <input
                             className="live-demo-search-input"
                             type="text"
-                            placeholder="Search…"
+                            placeholder="Search side effects…"
                             value={query}
                             onChange={e => setQuery(e.target.value)}
                         />
@@ -341,10 +341,10 @@ function LiveDemo({ navigate }) {
             {/* Footer bar */}
             <div className="live-demo-footer">
                 <span style={{ color: "#2a2a3a", fontSize: 11 }}>
-                    {points2d ? `${points2d.length.toLocaleString()} points` : ""}
+                    {points2d ? `${points2d.length.toLocaleString()} drugs · closer = more similar side effects` : ""}
                 </span>
                 <button className="btn-primary" style={{ fontSize: 12, padding: "6px 14px" }}
-                    onClick={() => navigate("/app?demo=true")}>
+                    onClick={() => navigate("/map?demo=true")}>
                     Open full map →
                 </button>
             </div>
@@ -363,7 +363,7 @@ export default function LandingPage() {
                 <div className="landing-nav-links">
                     <a href="#demo">Demo</a>
                 </div>
-                <button className="landing-nav-cta" onClick={() => navigate("/app")}>
+                <button className="landing-nav-cta" onClick={() => navigate("/map")}>
                     Open app →
                 </button>
             </nav>
@@ -371,7 +371,7 @@ export default function LandingPage() {
             {/* Demo */}
             <section className="section section-wide" id="demo">
                 <div className="section-label">Interactive preview</div>
-                <h2 className="section-title">5,832 movies & TV shows, visualised in embedding space</h2>
+                <h2 className="section-title">2,900+ drugs, clustered by side effects in embedding space</h2>
                 <LiveDemo navigate={navigate} />
             </section>
 

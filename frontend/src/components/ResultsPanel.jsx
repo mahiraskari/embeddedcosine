@@ -21,13 +21,17 @@ export default function ResultsPanel({ results, onClose }) {
         const onUp = () => { dragState.current = null; };
         window.addEventListener("mousemove", onMove);
         window.addEventListener("mouseup", onUp);
+        window.addEventListener("mouseleave", onUp);
         return () => {
             window.removeEventListener("mousemove", onMove);
             window.removeEventListener("mouseup", onUp);
+            window.removeEventListener("mouseleave", onUp);
         };
     }, []);
 
     const onDragStart = (e) => {
+        if (e.button !== 0) return; // left click only
+        e.preventDefault();
         dragState.current = {
             startX: e.clientX,
             startY: e.clientY,
@@ -83,7 +87,6 @@ export default function ResultsPanel({ results, onClose }) {
                     </span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 10, color: "#2a2a3a" }}>drag</span>
                     <button
                         onClick={onClose}
                         onMouseDown={e => e.stopPropagation()}
@@ -101,8 +104,20 @@ export default function ResultsPanel({ results, onClose }) {
                 </div>
             </div>
 
+            {/* Column headers */}
+            <div style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "6px 14px 4px",
+                borderBottom: "1px solid rgba(255,255,255,0.04)",
+            }}>
+                <span style={{ width: 14, flexShrink: 0 }} />
+                <span style={{ width: 6, flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: 9, color: "#2a2a3a", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Match</span>
+                <span style={{ fontSize: 9, color: "#2a2a3a", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", flexShrink: 0 }}>Similarity</span>
+            </div>
+
             {/* Results list */}
-            <div style={{ padding: "8px 0", maxHeight: 320, overflowY: "auto" }}>
+            <div style={{ padding: "8px 0", maxHeight: 300, overflowY: "auto", scrollbarWidth: "none" }}>
                 {results.map((r, i) => (
                     <div
                         key={r.Name}

@@ -1,12 +1,26 @@
 import os
 import math
 import numpy as np
+import pandas as pd
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from services.embedder import embed_texts
 from services.indexer import load_index, search
 
 router = APIRouter(prefix="/search", tags=["search"])
+
+
+def _sanitize_val(v):
+    if isinstance(v, np.generic):
+        v = v.item()
+    try:
+        if pd.isna(v):
+            return None
+    except (TypeError, ValueError):
+        pass
+    if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
+        return None
+    return v
 
 USER_DIR  = "data/user"
 DEMO_DIR  = "data/demo"
@@ -33,24 +47,17 @@ def search_games(req: SearchRequest):
     metadata     = np.load(meta_path, allow_pickle=True)
 
     # Fetch more candidates than needed, filter by score threshold
-    candidates = min(req.k * 5, len(metadata))
+    candidates = min(req.k * 30, len(metadata))
     scores, indices = search(index, query_vector, k=candidates)
 
-    MIN_SCORE = 0.05
+    MIN_SCORE = 0.01
     results = []
     for score, idx in zip(scores, indices):
         if idx < 0 or idx >= len(metadata):
             continue
         if float(score) < MIN_SCORE:
             break  # scores are sorted descending
-        raw = dict(metadata[idx])
-        item = {}
-        for k, v in raw.items():
-            if isinstance(v, np.generic):
-                v = v.item()
-            if isinstance(v, float) and math.isnan(v):
-                v = None
-            item[k] = v
+        item = {k: _sanitize_val(v) for k, v in dict(metadata[idx]).items()}
         item["score"] = round(float(score), 4)
         results.append(item)
         if len(results) >= req.k:

@@ -1,34 +1,49 @@
 """
-Builds demo data from titles.csv and saves to data/demo/.
+Builds demo data from drugs_side_effects_drugs_com.csv and saves to data/demo/.
+Embeds drug_name + side_effects + drug_classes so drugs with similar side effects cluster together.
 Run from the backend/ directory: python seed_demo.py
 """
-import os, sys, numpy as np, pandas as pd
+import os, sys, math, numpy as np, pandas as pd
 sys.stdout.reconfigure(encoding="utf-8")
 
 DEMO_DIR = "data/demo"
 os.makedirs(DEMO_DIR, exist_ok=True)
 
-print("Loading titles.csv...")
-df = pd.read_csv("../data/titles.csv", on_bad_lines="skip", encoding="utf-8-sig")
-df = df.rename(columns={"title": "Name"})
-df = df.dropna(subset=["Name", "description"])
-df = df[df["description"].str.strip() != ""].reset_index(drop=True)
-print(f"Using {len(df)} titles. Sample: {df['Name'].head().tolist()}")
+print("Loading drugs_side_effects_drugs_com.csv...")
+df = pd.read_csv("../data/drugs_side_effects_drugs_com.csv", on_bad_lines="skip", encoding="utf-8-sig")
+df = df.rename(columns={"drug_name": "Name"})
+df = df.dropna(subset=["Name", "side_effects"])
+df = df[df["side_effects"].str.strip() != ""].reset_index(drop=True)
+print(f"Using {len(df)} drugs. Sample: {df['Name'].head().tolist()}")
+
+# Embed: side_effects only — pure side-effect clustering
+texts = df["side_effects"].tolist()
+print(f"Sample embed text: {texts[0][:120]}...")
 
 # Embed
-print("Embedding descriptions...")
+print("Embedding (side effects only)...")
 from services.embedder import embed_texts
-embeddings = embed_texts(df["description"].tolist())
+embeddings = embed_texts(texts)
 np.save(f"{DEMO_DIR}/embeddings.npy", embeddings)
 print(f"Embeddings done: {embeddings.shape}")
 
-# Metadata — exclude description to keep lean, sanitise NaN
-import math
+# Metadata — sanitise NaN, drop very long columns to keep lean
+drop_cols = ["side_effects", "medical_condition_description", "related_drugs"]
+keep_df = df.drop(columns=[c for c in drop_cols if c in df.columns])
+
 records = []
-for row in df.drop(columns=["description"]).to_dict(orient="records"):
+for row in keep_df.to_dict(orient="records"):
     clean = {}
     for k, v in row.items():
-        if isinstance(v, float) and math.isnan(v):
+        if isinstance(v, np.generic):
+            v = v.item()
+        try:
+            if pd.isna(v):
+                clean[k] = None
+                continue
+        except (TypeError, ValueError):
+            pass
+        if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
             clean[k] = None
         else:
             clean[k] = v

@@ -37,12 +37,9 @@ export async function uploadDataset(file, onProgress) {
     return response.data;
 }
 
-export async function configureDataset(name_col, text_col) {
-    const response = await api.post("/dataset/configure", { name_col, text_col });
+export async function configureDataset(name_col, embed_cols) {
+    const response = await api.post("/dataset/configure", { name_col, embed_cols });
     return response.data;
 }
 
-export async function runPipeline() {
-    const response = await api.post("/dataset/pipeline", {}, { timeout: 60 * 60 * 1000 });
-    return response.data;
-}
+export const PIPELINE_STREAM_URL = "http://localhost:8000/dataset/pipeline/stream";

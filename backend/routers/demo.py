@@ -1,9 +1,23 @@
 import os
 import math
 import numpy as np
+import pandas as pd
 from fastapi import APIRouter, HTTPException
 
 router = APIRouter(prefix="/demo", tags=["demo"])
+
+
+def _sanitize_val(v):
+    if isinstance(v, np.generic):
+        v = v.item()
+    try:
+        if pd.isna(v):
+            return None
+    except (TypeError, ValueError):
+        pass
+    if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
+        return None
+    return v
 
 DEMO_DIR  = "data/demo"
 COORDS_2D = f"{DEMO_DIR}/coords_2d.npy"
@@ -26,16 +40,7 @@ def get_demo_points(dims: int = 2):
 
     points = []
     for i, meta in enumerate(metadata):
-        point = {}
-        for k, v in dict(meta).items():
-            if isinstance(v, float) and math.isnan(v):
-                point[k] = None
-            elif isinstance(v, np.generic):
-                point[k] = v.item()
-                if isinstance(point[k], float) and math.isnan(point[k]):
-                    point[k] = None
-            else:
-                point[k] = v
+        point = {k: _sanitize_val(v) for k, v in dict(meta).items()}
         point["x"] = float(coords[i][0])
         point["y"] = float(coords[i][1])
         if dims == 3:
