@@ -9,6 +9,9 @@ from services.indexer import load_index, search
 
 router = APIRouter(prefix="/search", tags=["search"])
 
+DEMO_DIR     = "data/demo"
+PROJECTS_DIR = "data/projects"
+
 
 def _sanitize_val(v):
     if isinstance(v, np.generic):
@@ -22,19 +25,64 @@ def _sanitize_val(v):
         return None
     return v
 
-USER_DIR  = "data/user"
-DEMO_DIR  = "data/demo"
-
 
 class SearchRequest(BaseModel):
     query: str
     k: int = 10
     demo: bool = False
+    project_id: str | None = None
+
+
+class SimilarityRequest(BaseModel):
+    name_a: str
+    name_b: str
+    demo: bool = False
+    project_id: str | None = None
+
+
+@router.post("/similarity")
+def compute_similarity(req: SimilarityRequest):
+    if req.demo:
+        data_dir = DEMO_DIR
+    elif req.project_id:
+        data_dir = f"{PROJECTS_DIR}/{req.project_id}"
+    else:
+        raise HTTPException(status_code=400, detail="Provide demo=true or project_id")
+
+    meta_path = f"{data_dir}/metadata.npy"
+    emb_path  = f"{data_dir}/embeddings.npy"
+    if not os.path.exists(meta_path) or not os.path.exists(emb_path):
+        raise HTTPException(status_code=404, detail="No data found")
+
+    metadata   = np.load(meta_path, allow_pickle=True)
+    embeddings = np.load(emb_path)
+
+    idx_a = idx_b = None
+    for i, m in enumerate(metadata):
+        name = dict(m).get("Name", "")
+        if name == req.name_a: idx_a = i
+        if name == req.name_b: idx_b = i
+        if idx_a is not None and idx_b is not None:
+            break
+
+    if idx_a is None or idx_b is None:
+        return {"similarity": None}
+
+    a = embeddings[idx_a].astype(float)
+    b = embeddings[idx_b].astype(float)
+    # Cosine similarity — +1e-8 prevents division by zero on zero vectors
+    sim = float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-8))
+    return {"similarity": round(sim, 4)}
 
 
 @router.post("")
 def search_games(req: SearchRequest):
-    data_dir = DEMO_DIR if req.demo else USER_DIR
+    if req.demo:
+        data_dir = DEMO_DIR
+    elif req.project_id:
+        data_dir = f"{PROJECTS_DIR}/{req.project_id}"
+    else:
+        raise HTTPException(status_code=400, detail="Provide demo=true or a project_id")
 
     index_path = f"{data_dir}/index.faiss"
     meta_path  = f"{data_dir}/metadata.npy"
@@ -46,7 +94,7 @@ def search_games(req: SearchRequest):
     index        = load_index(data_dir)
     metadata     = np.load(meta_path, allow_pickle=True)
 
-    # Fetch more candidates than needed, filter by score threshold
+    # Over-fetch from FAISS so we have room to filter out near-zero scores
     candidates = min(req.k * 30, len(metadata))
     scores, indices = search(index, query_vector, k=candidates)
 
@@ -55,8 +103,9 @@ def search_games(req: SearchRequest):
     for score, idx in zip(scores, indices):
         if idx < 0 or idx >= len(metadata):
             continue
+        # FAISS returns results in score order, so once we're below the floor we can stop
         if float(score) < MIN_SCORE:
-            break  # scores are sorted descending
+            break
         item = {k: _sanitize_val(v) for k, v in dict(metadata[idx]).items()}
         item["score"] = round(float(score), 4)
         results.append(item)

@@ -17,6 +17,7 @@ export default function SetupView({ onDone, onBack }) {
     const [uploadInfo, setUploadInfo] = useState(null);
     const [nameCol, setNameCol]     = useState("");
     const [embedCols, setEmbedCols] = useState([]);
+    const [projectName, setProjectName] = useState("");
     const fileRef                   = useRef(null);
 
     const toggleEmbedCol = (col) => {
@@ -42,17 +43,15 @@ export default function SetupView({ onDone, onBack }) {
         try {
             const data = await uploadDataset(file, setUploadProgress);
             setUploadInfo(data);
-            // Guess sensible defaults
+            // Try to find a "name" or "title" column for the display label — fall back to first column
             const cols = data.columns.map(c => String(c).toLowerCase());
             const nameGuess = data.columns[cols.findIndex(c =>
                 c.includes("name") || c.includes("title"))] || data.columns[0];
-            // Pre-check columns that look like useful text fields
-            const textKeywords = ["desc", "about", "summary", "text", "overview", "plot", "synopsis", "genre", "tag", "category", "type"];
-            const autoEmbed = data.columns.filter(c =>
-                textKeywords.some(kw => String(c).toLowerCase().includes(kw))
-            );
             setNameCol(nameGuess);
-            setEmbedCols(autoEmbed.length > 0 ? autoEmbed : [data.columns[1] || data.columns[0]]);
+            setEmbedCols([]);
+            // Turn the filename into a readable project name (e.g. "my_dataset.csv" → "My Dataset")
+            const defaultName = file.name.replace(/\.[^.]+$/, "").replace(/[_-]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+            setProjectName(defaultName);
             setStep(1);
         } catch (err) {
             setError(err.response?.data?.detail || err.message || "Upload failed — is the backend running?");
@@ -67,7 +66,7 @@ export default function SetupView({ onDone, onBack }) {
             return;
         }
         try {
-            await configureDataset(nameCol, embedCols);
+            await configureDataset(nameCol, embedCols, projectName.trim() || "Untitled");
             setStep(2);
         } catch (err) {
             setError(err.response?.data?.detail || "Configuration failed");
@@ -86,7 +85,8 @@ export default function SetupView({ onDone, onBack }) {
         const es = new EventSource(PIPELINE_STREAM_URL);
         esRef.current = es;
 
-        // Slowly drift progress during slow stages (UMAP) so bar never freezes
+        // UMAP emits no sub-events, so the bar would freeze at 80% or 90% for several seconds.
+        // This drifts it slowly toward the ceiling so there's visible feedback without lying about actual progress.
         const startDrift = (from, ceiling) => {
             if (progressRef.current) clearInterval(progressRef.current);
             let cur = from;
@@ -108,18 +108,17 @@ export default function SetupView({ onDone, onBack }) {
                 return;
             }
 
-            // Real progress event — stop any drift ticker and jump to real value
+            // A real event arrived — cancel any drift ticker and snap to the true value
             if (progressRef.current) { clearInterval(progressRef.current); progressRef.current = null; }
             setProgress(data.pct);
             setStageLabel(data.label);
 
-            // During UMAP stages we won't get sub-events, so drift slowly
             if (data.stage === "umap2d") startDrift(data.pct, 89);
             if (data.stage === "umap3d") startDrift(data.pct, 99);
 
             if (data.stage === "done") {
                 es.close();
-                setTimeout(onDone, 500);
+                setTimeout(() => onDone(data.project_id), 500);
             }
         };
 
@@ -219,7 +218,7 @@ export default function SetupView({ onDone, onBack }) {
 
                         <div style={styles.fieldGroup}>
                             <label style={styles.label}>Columns to embed</label>
-                            <p style={styles.fieldHint}>Select one or more columns — they will be combined into a single embedding (e.g. description + genres)</p>
+                            <p style={styles.fieldHint}>Select one or more columns. They will be combined into a single embedding.</p>
                             <div style={styles.checkboxList}>
                                 {uploadInfo.columns.map(c => (
                                     <label key={c} style={styles.checkboxRow}>
@@ -252,6 +251,17 @@ export default function SetupView({ onDone, onBack }) {
                             })}
                         </div>
                         )}
+
+                        <div style={styles.fieldGroup}>
+                            <label style={styles.label}>Project name</label>
+                            <input
+                                style={styles.nameInput}
+                                type="text"
+                                value={projectName}
+                                onChange={e => setProjectName(e.target.value)}
+                                placeholder="My project"
+                            />
+                        </div>
 
                         <button style={styles.btn} onClick={handleConfigure}>
                             Confirm →
@@ -369,6 +379,17 @@ const styles = {
         padding: "7px 10px",
         fontSize: 12,
         outline: "none",
+    },
+    nameInput: {
+        background: "#08080f",
+        border: "1px solid #1e1e30",
+        color: "#e2e2e2",
+        borderRadius: 2,
+        padding: "7px 10px",
+        fontSize: 12,
+        outline: "none",
+        fontFamily: "inherit",
+        width: "100%",
     },
     checkboxList: {
         display: "flex",

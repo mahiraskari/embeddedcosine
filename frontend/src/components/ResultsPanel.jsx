@@ -2,7 +2,16 @@ import { useRef, useState, useEffect } from "react";
 
 const COLORS = ["#818cf8","#a78bfa","#c084fc","#e879f9","#34d399","#6ee7b7","#38bdf8","#fbbf24","#f87171","#fb923c"];
 
-export default function ResultsPanel({ results, onClose }) {
+export default function ResultsPanel({ results, onClose, onFlyTo, topK = 10, onTopKChange }) {
+    const [kInput, setKInput] = useState(String(topK));
+
+    const commitK = () => {
+        const parsed = parseInt(kInput, 10);
+        if (isNaN(parsed) || parsed < 1) { setKInput(String(topK)); return; }
+        const clamped = Math.min(50, Math.max(1, parsed));
+        setKInput(String(clamped));
+        if (clamped !== topK) onTopKChange?.(clamped);
+    };
     const panelRef  = useRef(null);
     const dragState = useRef(null);
     const [pos, setPos] = useState({ x: 24, y: 80 }); // initial position from top-left of map-container
@@ -30,8 +39,8 @@ export default function ResultsPanel({ results, onClose }) {
     }, []);
 
     const onDragStart = (e) => {
-        if (e.button !== 0) return; // left click only
-        e.preventDefault();
+        if (e.button !== 0) return;
+        e.preventDefault(); // prevent text selection while dragging the panel
         dragState.current = {
             startX: e.clientX,
             startY: e.clientY,
@@ -45,22 +54,23 @@ export default function ResultsPanel({ results, onClose }) {
     return (
         <div
             ref={panelRef}
+            data-panel
             style={{
                 position:  "absolute",
                 left:      pos.x,
                 top:       pos.y,
                 zIndex:    50,
                 width:     280,
-                background: "rgba(8, 8, 16, 0.97)",
-                border:    "1px solid rgba(99,102,241,0.25)",
-                borderRadius: 12,
-                boxShadow: "0 16px 48px rgba(0,0,0,0.8), 0 0 0 1px rgba(99,102,241,0.06)",
+                background: "#0c0c16",
+                border:    "1px solid #1e1e30",
+                borderRadius: 3,
+                boxShadow: "3px 3px 0px #000, 6px 6px 20px rgba(0,0,0,0.5)",
                 userSelect: "none",
-                backdropFilter: "blur(12px)",
             }}
         >
             {/* Drag handle */}
             <div
+                data-drag-handle
                 onMouseDown={onDragStart}
                 style={{
                     display: "flex",
@@ -78,13 +88,21 @@ export default function ResultsPanel({ results, onClose }) {
                     }}>
                         Results
                     </span>
-                    <span style={{
-                        fontSize: 10, color: "#333", background: "#111",
-                        border: "1px solid #1e1e2e", borderRadius: 3,
-                        padding: "1px 6px",
-                    }}>
-                        {results.length}
-                    </span>
+                    <input
+                        type="text"
+                        inputMode="numeric"
+                        value={kInput}
+                        onChange={e => setKInput(e.target.value.replace(/\D/g, ""))}
+                        onBlur={commitK}
+                        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); commitK(); } }}
+                        onMouseDown={e => e.stopPropagation()}
+                        style={{
+                            fontSize: 10, color: "#a0a0c0", background: "#111",
+                            border: "1px solid #1e1e2e", borderRadius: 3,
+                            padding: "1px 4px", width: 28, textAlign: "center",
+                            outline: "none", fontFamily: "inherit",
+                        }}
+                    />
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <button
@@ -127,9 +145,11 @@ export default function ResultsPanel({ results, onClose }) {
                             gap: 10,
                             padding: "7px 14px",
                             transition: "background 0.1s",
+                            cursor: onFlyTo ? "pointer" : "default",
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.06)"}
                         onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                        onClick={() => onFlyTo?.(r.Name)}
                     >
                         <span style={{
                             fontSize: 10, color: "#2a2a3a", width: 14,

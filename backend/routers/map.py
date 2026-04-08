@@ -6,10 +6,11 @@ from fastapi import APIRouter, HTTPException
 
 router = APIRouter(prefix="/map", tags=["map"])
 
-USER_DIR = "data/user"
+PROJECTS_DIR = "data/projects"
 
 
 def _sanitize_val(v):
+    # numpy scalars aren't JSON-serialisable — convert to native Python types first
     if isinstance(v, np.generic):
         v = v.item()
     try:
@@ -23,15 +24,16 @@ def _sanitize_val(v):
 
 
 @router.get("/points")
-def get_points(dims: int = 2):
+def get_points(project_id: str, dims: int = 2):
     if dims not in (2, 3):
         raise HTTPException(status_code=400, detail="dims must be 2 or 3")
 
-    coords_path = f"{USER_DIR}/coords_{dims}d.npy"
-    meta_path   = f"{USER_DIR}/metadata.npy"
+    data_dir = f"{PROJECTS_DIR}/{project_id}"
+    coords_path = f"{data_dir}/coords_{dims}d.npy"
+    meta_path   = f"{data_dir}/metadata.npy"
 
     if not os.path.exists(coords_path) or not os.path.exists(meta_path):
-        raise HTTPException(status_code=404, detail="No user data found. Upload a dataset first.")
+        raise HTTPException(status_code=404, detail="Project data not found.")
 
     coords   = np.load(coords_path)
     metadata = np.load(meta_path, allow_pickle=True)

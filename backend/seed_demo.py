@@ -27,14 +27,15 @@ embeddings = embed_texts(texts)
 np.save(f"{DEMO_DIR}/embeddings.npy", embeddings)
 print(f"Embeddings done: {embeddings.shape}")
 
-# Metadata — sanitise NaN, drop very long columns to keep lean
-drop_cols = ["side_effects", "medical_condition_description", "related_drugs"]
+# Sanitise NaN, and drop verbose columns that bloat the payload without adding map value
+drop_cols = ["medical_condition_description", "related_drugs"]
 keep_df = df.drop(columns=[c for c in drop_cols if c in df.columns])
 
 records = []
 for row in keep_df.to_dict(orient="records"):
     clean = {}
     for k, v in row.items():
+        # Convert numpy scalars and nulls to plain Python so the array is JSON-safe later
         if isinstance(v, np.generic):
             v = v.item()
         try:
@@ -48,6 +49,7 @@ for row in keep_df.to_dict(orient="records"):
         else:
             clean[k] = v
     records.append(clean)
+# Saved as an object array of dicts — load with allow_pickle=True
 np.save(f"{DEMO_DIR}/metadata.npy", records)
 
 # FAISS index
@@ -61,6 +63,10 @@ from services.reducer import reduce
 reduce(n_components=2, data_dir=DEMO_DIR)
 print("Running UMAP 3D...")
 reduce(n_components=3, data_dir=DEMO_DIR)
+
+import json
+with open(f"{DEMO_DIR}/meta.json", "w") as f:
+    json.dump({"embed_cols": ["side_effects"]}, f)
 
 print(f"\nDone! Demo data saved to {DEMO_DIR}/")
 print(f"Files: {os.listdir(DEMO_DIR)}")

@@ -173,13 +173,23 @@ body {
     overflow: hidden;
 }
 
-/* Force crosshair cursor */
-.map-container,
-.map-container * {
-    cursor: crosshair !important;
+/* Crosshair on the map canvas itself */
+.map-container {
+    cursor: crosshair;
 }
-.map-container button {
-    cursor: pointer !important;
+
+/* Panels floating over the map get normal cursors */
+.map-container [data-panel] {
+    cursor: default;
+}
+.map-container [data-panel] button {
+    cursor: pointer;
+}
+.map-container [data-panel] input {
+    cursor: text;
+}
+.map-container [data-panel] [data-drag-handle] {
+    cursor: grab;
 }
 
 /* ── Loading / empty ─────────────────────────────────────────────────────── */

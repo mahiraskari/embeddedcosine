@@ -12,25 +12,26 @@ const DARK = "#0f0f0f";
 function TooltipCard({ point }) {
     return (
         <div style={{
-            background: "rgba(10, 10, 16, 0.97)",
-            border: "1px solid rgba(99, 102, 241, 0.35)",
-            borderRadius: 8,
-            padding: "6px 12px",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.75), 0 0 0 1px rgba(99,102,241,0.08)",
+            background: "#0d0d18",
+            border: "1px solid #1e1e35",
+            borderRadius: 3,
+            padding: "5px 10px",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.6)",
             pointerEvents: "none",
             userSelect: "none",
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-            color: "#f0f0f8",
-            fontSize: 13,
-            fontWeight: 600,
+            fontFamily: '"Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            color: "#d4d4e8",
+            fontSize: 12,
+            fontWeight: 500,
             whiteSpace: "nowrap",
-            letterSpacing: "-0.01em",
+            letterSpacing: "0em",
         }}>
             {point.Name}
         </div>
     );
 }
 
+// Standard HSL → hex conversion — keeps color logic out of getColors
 function hslToHex(h, s, l) {
     s /= 100; l /= 100;
     const a = s * Math.min(l, 1 - l);
@@ -138,7 +139,7 @@ function FPSLook({ controlsRef }) {
 
 // ── 3D: point cloud with hover tooltip ───────────────────────────────────────
 
-function PointCloud({ points, searchResults }) {
+function PointCloud({ points, searchResults, onPointClick }) {
     const [hovered, setHovered] = useState(null);
     const hideTimer = useRef(null);
     const hexColors = useMemo(() => getColors(points), [points]);
@@ -147,6 +148,7 @@ function PointCloud({ points, searchResults }) {
         const matchNames = searchResults && searchResults.length > 0
             ? new Set(searchResults.map(r => r.Name))
             : null;
+        // Interleaved typed arrays — BufferGeometry expects flat [x,y,z, x,y,z, …]
         const pos = new Float32Array(points.length * 3);
         const col = new Float32Array(points.length * 3);
         const c = new THREE.Color();
@@ -154,6 +156,7 @@ function PointCloud({ points, searchResults }) {
             pos[i * 3]     = p.x;
             pos[i * 3 + 1] = p.y;
             pos[i * 3 + 2] = p.z;
+            // Dim non-matching points to near-black instead of hiding them, so the cloud shape stays visible
             const hex = (!matchNames || matchNames.has(p.Name)) ? hexColors[i] : "#111118";
             c.set(hex);
             col[i * 3]     = c.r;
@@ -177,7 +180,13 @@ function PointCloud({ points, searchResults }) {
                     }
                 }}
                 onPointerOut={() => {
+                    // Small delay prevents the tooltip flickering when the cursor gaps between points
                     hideTimer.current = setTimeout(() => setHovered(null), 120);
+                }}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    const idx = e.intersections[0]?.index;
+                    if (idx !== undefined && onPointClick) onPointClick(points[idx]);
                 }}
             >
                 <bufferGeometry>
@@ -187,7 +196,7 @@ function PointCloud({ points, searchResults }) {
                 <pointsMaterial
                     size={4.5}
                     vertexColors
-                    sizeAttenuation={false}
+                    sizeAttenuation={false}  // fixed pixel size regardless of zoom depth
                     transparent
                     opacity={0.9}
                 />
@@ -227,7 +236,26 @@ function CameraReset({ controlsRef, cx, cy, cz, d }) {
     return null;
 }
 
-function Scene3D({ points, searchResults }) {
+function FlyToWatcher({ flyToRef, controlsRef }) {
+    const { camera } = useThree();
+    useEffect(() => {
+        if (!flyToRef) return;
+        // Preserve the current camera offset from its target so the view angle stays the same
+        flyToRef.current = (point) => {
+            const ctrl = controlsRef.current;
+            if (!ctrl) return;
+            const tx = point.x, ty = point.y, tz = point.z ?? 0;
+            const offset = new THREE.Vector3()
+                .subVectors(camera.position, ctrl.target);
+            ctrl.target.set(tx, ty, tz);
+            camera.position.set(tx + offset.x, ty + offset.y, tz + offset.z);
+            ctrl.update();
+        };
+    }, [flyToRef, controlsRef, camera]);
+    return null;
+}
+
+function Scene3D({ points, searchResults, onPointClick, flyToRef }) {
     const { cx, cy, cz, span } = useBounds(points);
     const d = span * 0.75;
     const controlsRef = useRef();
@@ -240,12 +268,13 @@ function Scene3D({ points, searchResults }) {
             style={{ width: "100%", height: "100%" }}
         >
             <color attach="background" args={[DARK]} />
-            <PointCloud points={points} searchResults={searchResults} />
+            <PointCloud points={points} searchResults={searchResults} onPointClick={onPointClick} />
             <OrbitControls
                 ref={controlsRef}
                 makeDefault
                 target={[cx, cy, cz]}
                 mouseButtons={{
+                    // Left is handled by FPSLook — this fallback is overridden by capture listener
                     LEFT:   THREE.MOUSE.PAN,
                     MIDDLE: THREE.MOUSE.DOLLY,
                     RIGHT:  THREE.MOUSE.ROTATE,
@@ -256,6 +285,7 @@ function Scene3D({ points, searchResults }) {
             />
             <FPSLook controlsRef={controlsRef} />
             <CameraReset controlsRef={controlsRef} cx={cx} cy={cy} cz={cz} d={d} />
+            <FlyToWatcher flyToRef={flyToRef} controlsRef={controlsRef} />
             <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
                 <GizmoViewport
                     axisColors={["#f87171", "#4ade80", "#60a5fa"]}
@@ -268,7 +298,7 @@ function Scene3D({ points, searchResults }) {
 
 // ── 2D: Plotly scattergl + Voronoi background ─────────────────────────────────
 
-function Scene2D({ points, showVoronoi, searchResults }) {
+function Scene2D({ points, showVoronoi, searchResults, onPointClick, flyToRef }) {
     const mainRef        = useRef(null);
     const voronoiRef     = useRef(null);
     const zoomCanvasRef  = useRef(null);
@@ -362,8 +392,9 @@ function Scene2D({ points, showVoronoi, searchResults }) {
             minY: minY - padY, maxY: maxY + padY,
         };
 
-        // Build Voronoi once in data space with large padding so boundary cells
-        // aren't artificially clipped before canvas clip takes over
+        // Build Voronoi once in data space — Delaunay triangulates the point set, then
+        // voronoi() derives the dual graph. Large padding prevents boundary cells from being
+        // clipped by the bounding box before the canvas clip rect takes over at render time.
         const vPadX = (maxX - minX) * 2, vPadY = (maxY - minY) * 2;
         const delaunay = Delaunay.from(points, p => p.x, p => p.y);
         const voronoi  = delaunay.voronoi([minX - vPadX, minY - vPadY, maxX + vPadX, maxY + vPadY]);
@@ -380,7 +411,8 @@ function Scene2D({ points, showVoronoi, searchResults }) {
 
         const db = dataBoundsRef.current;
 
-        // Block scroll-out before Plotly sees it (capture phase) — no snap-back spasm
+        // Intercept scroll-out in capture phase before Plotly can process it.
+        // Without this Plotly tries to zoom out past the data bounds, then snaps back — visually jarring.
         const onWheel = (e) => {
             if (e.deltaY <= 0) return;
             const fl = mainRef.current?._fullLayout;
@@ -408,7 +440,8 @@ function Scene2D({ points, showVoronoi, searchResults }) {
             paper_bgcolor: "rgba(0,0,0,0)",
             plot_bgcolor:  "rgba(0,0,0,0)",
             dragmode: "pan",
-            // Pin initial range to data bounds so doubleClick "reset" snaps here, not to autorange
+                // Pinning the initial range makes Plotly's built-in doubleClick reset snap back to
+            // the padded data extent rather than autorange (which can include a lot of whitespace).
             xaxis: { showgrid: false, zeroline: false, showticklabels: false, showspikes: false, range: [db.minX, db.maxX] },
             yaxis: { showgrid: false, zeroline: false, showticklabels: false, showspikes: false, range: [db.minY, db.maxY] },
             margin: { l: 0, r: 0, t: 0, b: 0 },
@@ -420,8 +453,28 @@ function Scene2D({ points, showVoronoi, searchResults }) {
             if (idx !== undefined) setHovered2D(points[idx]);
         };
         const onPlotlyUnhover = () => setHovered2D(null);
+        const onPlotlyClick = (data) => {
+            const idx = data.points[0]?.pointIndex;
+            if (idx !== undefined && onPointClick) onPointClick(points[idx]);
+        };
         mainRef.current.on("plotly_hover",   onPlotlyHover);
         mainRef.current.on("plotly_unhover", onPlotlyUnhover);
+        mainRef.current.on("plotly_click",   onPlotlyClick);
+
+        // Expose flyTo so parent can pan to a point
+        if (flyToRef) {
+            flyToRef.current = (point) => {
+                const fl = mainRef.current?._fullLayout;
+                if (!fl) return;
+                const xa = fl.xaxis, ya = fl.yaxis;
+                const xSpan = (xa.range[1] - xa.range[0]) * 0.3;
+                const ySpan = (ya.range[1] - ya.range[0]) * 0.3;
+                Plotly.relayout(mainRef.current, {
+                    "xaxis.range": [point.x - xSpan, point.x + xSpan],
+                    "yaxis.range": [point.y - ySpan, point.y + ySpan],
+                });
+            };
+        }
 
         const onMouseMove = (e) => {
             if (!tooltipRef.current) return;
@@ -431,7 +484,9 @@ function Scene2D({ points, showVoronoi, searchResults }) {
         };
         mainRef.current.addEventListener("mousemove", onMouseMove);
 
-        // rAF loop — schedules a debounced redraw when axis range changes
+        // rAF loop that redraws the Voronoi canvas whenever Plotly's axis range changes.
+        // We fingerprint the range + pixel length so a resize also triggers a redraw.
+        // Checking on every frame is cheap — the actual draw only runs when something changed.
         const loop = () => {
             const fl = mainRef.current?._fullLayout;
             if (fl) {
@@ -486,6 +541,7 @@ function Scene2D({ points, showVoronoi, searchResults }) {
             const r   = mainRef.current.getBoundingClientRect();
             const end = { x: e.clientX - r.left, y: e.clientY - r.top };
             if (zc) zc.getContext("2d").clearRect(0, 0, zc.width, zc.height);
+            // Ignore tiny drags — treat them as accidental rather than intentional box-zoom
             if (Math.abs(end.x - zoomStart.x) < 8 || Math.abs(end.y - zoomStart.y) < 8) {
                 zoomStart = null; return;
             }
@@ -559,11 +615,11 @@ function Scene2D({ points, showVoronoi, searchResults }) {
 
 // ── Root ─────────────────────────────────────────────────────────────────────
 
-export default function MapView({ points, dims, showVoronoi, searchResults }) {
+export default function MapView({ points, dims, showVoronoi, searchResults, onPointClick, flyToRef }) {
     if (!points || points.length === 0) {
         return <div className="map-empty">No data loaded.</div>;
     }
     return dims === 3
-        ? <Scene3D points={points} searchResults={searchResults} />
-        : <Scene2D points={points} showVoronoi={showVoronoi} searchResults={searchResults} />;
+        ? <Scene3D points={points} searchResults={searchResults} onPointClick={onPointClick} flyToRef={flyToRef} />
+        : <Scene2D points={points} showVoronoi={showVoronoi} searchResults={searchResults} onPointClick={onPointClick} flyToRef={flyToRef} />;
 }

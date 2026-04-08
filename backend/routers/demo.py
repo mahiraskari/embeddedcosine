@@ -8,6 +8,7 @@ router = APIRouter(prefix="/demo", tags=["demo"])
 
 
 def _sanitize_val(v):
+    # numpy scalars aren't JSON-serialisable — convert to native Python types first
     if isinstance(v, np.generic):
         v = v.item()
     try:
@@ -25,6 +26,16 @@ COORDS_3D = f"{DEMO_DIR}/coords_3d.npy"
 METADATA  = f"{DEMO_DIR}/metadata.npy"
 
 
+@router.get("/meta")
+def get_demo_meta():
+    import json as _json
+    meta_path = f"{DEMO_DIR}/meta.json"
+    if not os.path.exists(meta_path):
+        return {"embed_cols": []}
+    with open(meta_path) as f:
+        return _json.load(f)
+
+
 @router.get("/points")
 def get_demo_points(dims: int = 2):
     if dims not in (2, 3):
@@ -36,6 +47,7 @@ def get_demo_points(dims: int = 2):
         raise HTTPException(status_code=404, detail="Demo data not seeded yet")
 
     coords   = np.load(coords_path)
+    # metadata is an object array of dicts — allow_pickle is required
     metadata = np.load(METADATA, allow_pickle=True)
 
     points = []

@@ -126,6 +126,7 @@ function DemoMap() {
                 {hovered && (() => {
                     const p = DEMO_POINTS.find(d => d.name === hovered);
                     if (!p) return null;
+                    // Flip the tooltip to the left for points near the right edge of the SVG
                     const tx = p.x > 70 ? p.x - 2 : p.x + 2.5;
                     const anchor = p.x > 70 ? "end" : "start";
                     return (
@@ -265,7 +266,7 @@ function LiveDemo({ navigate }) {
     const [searchResults, setSearchResults] = useState(null);
     const [searching, setSearching]     = useState(false);
 
-    // Fetch both in parallel on mount so switching is instant
+    // Prefetch both 2D and 3D in parallel so toggling dims doesn't trigger another round-trip
     useEffect(() => {
         fetchDemoPoints(2).then(d => setPoints2d(d.points)).catch(() => {});
         fetchDemoPoints(3).then(d => setPoints3d(d.points)).catch(() => {});
@@ -345,7 +346,7 @@ function LiveDemo({ navigate }) {
                 </span>
                 <button className="btn-primary" style={{ fontSize: 12, padding: "6px 14px" }}
                     onClick={() => navigate("/map?demo=true")}>
-                    Open full map →
+                    Open full map for extra features →
                 </button>
             </div>
         </div>
@@ -361,10 +362,10 @@ export default function LandingPage() {
             <nav className="landing-nav">
                 <span className="landing-nav-logo">embeddedcosine</span>
                 <div className="landing-nav-links">
-                    <a href="#demo">Demo</a>
+                    <a href="#demo">Interactive preview</a>
                 </div>
-                <button className="landing-nav-cta" onClick={() => navigate("/map")}>
-                    Open app →
+                <button className="landing-nav-cta" onClick={() => navigate("/projects")}>
+                    Try it out →
                 </button>
             </nav>
 

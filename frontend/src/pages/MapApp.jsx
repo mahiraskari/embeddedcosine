@@ -1,81 +1,93 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import MapView from "../components/MapView";
-import SetupView from "../components/SetupView";
 import ResultsPanel from "../components/ResultsPanel";
-import { fetchMapPoints, fetchDemoPoints, searchGames, fetchDatasetStatus } from "../api/client";
+import ClickPanel from "../components/ClickPanel";
+import KeybindPanel from "../components/KeybindPanel";
+import { fetchProjectPoints, fetchDemoPoints, searchGames, fetchProjectMeta, fetchDemoMeta } from "../api/client";
 import "../App.css";
 
 export default function MapApp() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const isDemo = searchParams.get("demo") === "true";
-    const [ready, setReady]                 = useState(null);
-    const [showSetup, setShowSetup]         = useState(false);
+    const isDemo      = searchParams.get("demo") === "true";
+    const projectId   = searchParams.get("id");
+
     const [points, setPoints]               = useState([]);
     const [dims, setDims]                   = useState(2);
-    const [loading, setLoading]             = useState(false);
+    const [loading, setLoading]             = useState(true);
     const [query, setQuery]                 = useState("");
     const [searchResults, setSearchResults] = useState(null);
+    const [topK, setTopK]                   = useState(10);
     const [showVoronoi, setShowVoronoi]     = useState(false);
+    const [selected, setSelected]           = useState([]);
+    const [showKeys, setShowKeys]           = useState(false);
+    const [embedCols, setEmbedCols]         = useState([]);
+    const flyToRef                          = useRef(null);
 
-    const loadPoints = (d) => {
+    useEffect(() => {
+        if (!isDemo && !projectId) { navigate("/projects"); return; }
+        // Fetch embed cols once on mount
+        const metaReq = isDemo ? fetchDemoMeta() : fetchProjectMeta(projectId);
+        metaReq.then(m => setEmbedCols(m.embed_cols || [])).catch(() => {});
+    }, [isDemo, projectId]);
+
+    useEffect(() => {
+        if (!isDemo && !projectId) return;
         setLoading(true);
-        const fetch = isDemo ? fetchDemoPoints(d) : fetchMapPoints(d);
-        fetch.then(data => setPoints(data.points)).finally(() => setLoading(false));
+        const req = isDemo ? fetchDemoPoints(dims) : fetchProjectPoints(projectId, dims);
+        req.then(data => setPoints(data.points)).finally(() => setLoading(false));
+    }, [dims, isDemo, projectId]);
+
+    const handlePointClick = (point) => {
+        setSelected(prev => {
+            if (prev.length === 0) return [point];
+            if (prev.length === 1) {
+                if (prev[0].Name === point.Name) return [];   // clicking same point deselects
+                return [prev[0], point];                       // second distinct point → compare mode
+            }
+            return [point];  // third click resets to single selection
+        });
     };
 
-    useEffect(() => {
-        if (isDemo) {
-            setReady(true);
-            return;
-        }
-        fetchDatasetStatus().then(s => setReady(s.has_map));
-    }, []);
-
-    useEffect(() => {
-        if (!ready) return;
-        loadPoints(dims);
-    }, [dims, ready]);
+    const runSearch = async (q, k) => {
+        if (!q.trim()) { setSearchResults(null); return; }
+        const data = await searchGames(q.trim(), k, isDemo, isDemo ? null : projectId);
+        setSearchResults(data.results);
+    };
 
     const handleSearch = async (e) => {
         e.preventDefault();
-        if (!query.trim()) { setSearchResults(null); return; }
-        const data = await searchGames(query.trim(), 10, isDemo);
-        setSearchResults(data.results);
+        runSearch(query, topK);
+    };
+
+    const handleTopKChange = (k) => {
+        setTopK(k);
+        if (query.trim()) runSearch(query, k);
     };
 
     const clearSearch = () => { setQuery(""); setSearchResults(null); };
 
-    if (ready === null) {
-        return <div className="loading" style={{ height: "100vh" }}>LOADING</div>;
-    }
-
-    if (!ready || showSetup) {
-        return (
-            <SetupView
-                onDone={() => {
-                    setReady(true);
-                    setShowSetup(false);
-                    setSearchResults(null);
-                    setQuery("");
-                    loadPoints(dims);
-                }}
-                onBack={ready ? () => setShowSetup(false) : () => navigate("/")}
-            />
-        );
-    }
+    const flyToPoint = (name) => {
+        if (!flyToRef.current) return;
+        // flyToRef.current is assigned by whichever Scene component is mounted (2D or 3D)
+        const pt = points.find(p => p.Name === name);
+        if (pt) flyToRef.current(pt);
+    };
 
     return (
         <div className="app">
             <header className="header">
-                <span className="logo" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
+                <span className="logo" onClick={() => navigate(isDemo ? "/" : "/projects")} style={{ cursor: "pointer" }}>
                     embeddedcosine
                 </span>
+                <button className="load-dataset-btn" onClick={() => setShowKeys(v => !v)}>
+                    Controls
+                </button>
                 <form className="search-bar" onSubmit={handleSearch}>
                     <input
                         type="text"
-                        placeholder="Search..."
+                        placeholder="Search…"
                         value={query}
                         onChange={e => setQuery(e.target.value)}
                     />
@@ -96,14 +108,9 @@ export default function MapApp() {
                         Voronoi
                     </button>
                 )}
-                <button className="load-dataset-btn" onClick={() => navigate("/")}>
-                    ← Home
+                <button className="load-dataset-btn" onClick={() => navigate(isDemo ? "/" : "/projects")}>
+                    {isDemo ? "← Home" : "← Projects"}
                 </button>
-                {!isDemo && (
-                    <button className="load-dataset-btn" onClick={() => setShowSetup(true)}>
-                        + Load dataset
-                    </button>
-                )}
             </header>
 
             <main className="main">
@@ -111,10 +118,35 @@ export default function MapApp() {
                     {loading ? (
                         <div className="loading">LOADING</div>
                     ) : (
-                        <MapView points={points} dims={dims} searchResults={searchResults} showVoronoi={showVoronoi} />
+                        <MapView
+                            points={points}
+                            dims={dims}
+                            searchResults={searchResults}
+                            showVoronoi={showVoronoi}
+                            onPointClick={handlePointClick}
+                            flyToRef={flyToRef}
+                        />
                     )}
                     {searchResults && (
-                        <ResultsPanel results={searchResults} onClose={clearSearch} />
+                        <ResultsPanel
+                            results={searchResults}
+                            onClose={clearSearch}
+                            onFlyTo={flyToPoint}
+                            topK={topK}
+                            onTopKChange={handleTopKChange}
+                        />
+                    )}
+                    {showKeys && (
+                        <KeybindPanel onClose={() => setShowKeys(false)} />
+                    )}
+                    {selected.length > 0 && (
+                        <ClickPanel
+                            selected={selected}
+                            onClose={() => setSelected([])}
+                            demo={isDemo}
+                            projectId={projectId}
+                            embedCols={embedCols}
+                        />
                     )}
                 </div>
             </main>
