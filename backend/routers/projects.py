@@ -3,20 +3,25 @@ import json
 import shutil
 import math
 import numpy as np
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from auth import get_user_id
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 PROJECTS_DIR = "data/projects"
 MAX_PROJECTS = 10
 
 
-def _meta_path(pid: str) -> str:
-    return f"{PROJECTS_DIR}/{pid}/meta.json"
+def _user_dir(user_id: str) -> str:
+    return f"{PROJECTS_DIR}/{user_id}"
 
 
-def _load_meta(pid: str) -> dict:
-    p = _meta_path(pid)
+def _meta_path(user_id: str, pid: str) -> str:
+    return f"{_user_dir(user_id)}/{pid}/meta.json"
+
+
+def _load_meta(user_id: str, pid: str) -> dict:
+    p = _meta_path(user_id, pid)
     if not os.path.exists(p):
         raise HTTPException(status_code=404, detail="Project not found")
     with open(p) as f:
@@ -24,20 +29,20 @@ def _load_meta(pid: str) -> dict:
 
 
 @router.get("")
-def list_projects():
-    if not os.path.exists(PROJECTS_DIR):
+def list_projects(user_id: str = Depends(get_user_id)):
+    user_dir = _user_dir(user_id)
+    if not os.path.exists(user_dir):
         return {"projects": []}
     projects = []
-    for pid in os.listdir(PROJECTS_DIR):
-        mp = _meta_path(pid)
+    for pid in os.listdir(user_dir):
+        mp = _meta_path(user_id, pid)
         if not os.path.exists(mp):
             continue
         with open(mp) as f:
             meta = json.load(f)
         meta["id"] = pid
-        meta["has_map"] = os.path.exists(f"{PROJECTS_DIR}/{pid}/coords_2d.npy")
+        meta["has_map"] = os.path.exists(f"{user_dir}/{pid}/coords_2d.npy")
         projects.append(meta)
-    # Newest first — ISO timestamps sort correctly as strings
     projects.sort(key=lambda p: p.get("created_at", ""), reverse=True)
     return {"projects": projects}
 
@@ -47,17 +52,17 @@ class RenameRequest(BaseModel):
 
 
 @router.patch("/{pid}")
-def rename_project(pid: str, req: RenameRequest):
-    meta = _load_meta(pid)
+def rename_project(pid: str, req: RenameRequest, user_id: str = Depends(get_user_id)):
+    meta = _load_meta(user_id, pid)
     meta["name"] = req.name.strip() or meta["name"]
-    with open(_meta_path(pid), "w") as f:
+    with open(_meta_path(user_id, pid), "w") as f:
         json.dump(meta, f)
     return {"id": pid, **meta}
 
 
 @router.delete("/{pid}")
-def delete_project(pid: str):
-    project_dir = f"{PROJECTS_DIR}/{pid}"
+def delete_project(pid: str, user_id: str = Depends(get_user_id)):
+    project_dir = f"{_user_dir(user_id)}/{pid}"
     if not os.path.exists(project_dir):
         raise HTTPException(status_code=404, detail="Project not found")
     shutil.rmtree(project_dir)
@@ -65,18 +70,17 @@ def delete_project(pid: str):
 
 
 @router.get("/{pid}/meta")
-def get_project_meta(pid: str):
-    return _load_meta(pid)
+def get_project_meta(pid: str, user_id: str = Depends(get_user_id)):
+    return _load_meta(user_id, pid)
 
 
 @router.get("/{pid}/preview")
-def project_preview(pid: str):
-    coords_path = f"{PROJECTS_DIR}/{pid}/coords_2d.npy"
+def project_preview(pid: str, user_id: str = Depends(get_user_id)):
+    coords_path = f"{_user_dir(user_id)}/{pid}/coords_2d.npy"
     if not os.path.exists(coords_path):
         raise HTTPException(status_code=404, detail="No map yet")
     coords = np.load(coords_path)
     n = len(coords)
-    # Cap at 400 points for the thumbnail — no need to ship the full dataset here
     if n > 400:
         idx = np.random.choice(n, 400, replace=False)
         coords = coords[idx]

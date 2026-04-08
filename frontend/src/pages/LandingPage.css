@@ -42,20 +42,37 @@
 }
 .landing-nav-links a:hover { color: #e2e2e2; }
 
-.landing-nav-cta {
-    background: rgba(99, 102, 241, 0.12);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    color: #818cf8;
-    padding: 7px 16px;
+.landing-nav-login {
+    background: none;
+    border: 1px solid #1e1e2e;
+    color: #555;
+    padding: 7px 14px;
     border-radius: 3px;
     font-size: 13px;
     cursor: pointer;
     transition: all 0.15s;
+    font-family: inherit;
+}
+.landing-nav-login:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #a5b4fc;
+}
+
+.landing-nav-cta {
+    background: #fff;
+    border: none;
+    color: #0a0a14;
+    padding: 7px 16px;
+    border-radius: 3px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    font-family: inherit;
+    letter-spacing: -0.2px;
 }
 .landing-nav-cta:hover {
-    background: rgba(99, 102, 241, 0.22);
-    border-color: rgba(99, 102, 241, 0.6);
-    color: #a5b4fc;
+    opacity: 0.85;
 }
 
 /* ── Hero ─────────────────────────────────────────────────────────────────── */

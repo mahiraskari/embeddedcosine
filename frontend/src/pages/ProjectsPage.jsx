@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchProjects, renameProject, deleteProject, fetchProjectPreview } from "../api/client";
+import { supabase } from "../supabase";
+import AccountMenu from "../components/AccountMenu";
 import SetupView from "../components/SetupView";
 
 const DOT_COLORS = ["#818cf8","#a78bfa","#c084fc","#6366f1","#38bdf8","#34d399","#fbbf24","#f87171"];
@@ -162,7 +164,7 @@ function NewProjectCard({ onClick }) {
         >
             <span style={{ fontSize: 26, color: hovering ? "#6366f1" : "#2a2a3a", transition: "color 0.15s" }}>+</span>
             <span style={{ fontSize: 12, color: hovering ? "#a5b4fc" : "#333", marginTop: 8, transition: "color 0.15s" }}>
-                New project
+                New dataset
             </span>
         </div>
     );
@@ -173,6 +175,11 @@ export default function ProjectsPage() {
     const [projects, setProjects] = useState([]);
     const [showSetup, setShowSetup] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [session, setSession] = useState(null);
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
+    }, []);
 
     const load = () => {
         fetchProjects().then(d => setProjects(d.projects)).finally(() => setLoading(false));
@@ -202,21 +209,24 @@ export default function ProjectsPage() {
         <div style={styles.page}>
             <nav style={styles.nav}>
                 <span style={styles.navLogo} onClick={() => navigate("/")}>embeddedcosine</span>
-                <button
-                    onClick={() => navigate("/")}
-                    style={styles.backBtn}
-                    onMouseEnter={e => e.currentTarget.style.color = "#a5b4fc"}
-                    onMouseLeave={e => e.currentTarget.style.color = "#555"}
-                >
-                    ← Back
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <button
+                        onClick={() => navigate("/")}
+                        style={styles.backBtn}
+                        onMouseEnter={e => e.currentTarget.style.color = "#a5b4fc"}
+                        onMouseLeave={e => e.currentTarget.style.color = "#555"}
+                    >
+                        ← Back
+                    </button>
+                    {session && <AccountMenu session={session} />}
+                </div>
             </nav>
 
             <div style={styles.content}>
                 <div style={styles.pageHeader}>
-                    <h1 style={styles.pageTitle}>Projects</h1>
+                    <h1 style={styles.pageTitle}>Datasets</h1>
                     <p style={styles.pageSubtitle}>
-                        Each project is a dataset mapped in semantic space.
+                        Each dataset is mapped in semantic space.
                         {projects.length > 0 && (
                             <span style={{ color: projects.length >= 10 ? "#f87171" : "#2a2a3a", marginLeft: 8 }}>
                                 {projects.length} / 10

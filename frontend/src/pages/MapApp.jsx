@@ -109,7 +109,7 @@ export default function MapApp() {
                     </button>
                 )}
                 <button className="load-dataset-btn" onClick={() => navigate(isDemo ? "/" : "/projects")}>
-                    {isDemo ? "← Home" : "← Projects"}
+                    {isDemo ? "← Home" : "← Datasets"}
                 </button>
             </header>
 

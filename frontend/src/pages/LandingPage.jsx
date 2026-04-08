@@ -1,6 +1,9 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { searchGames, fetchDemoPoints } from "../api/client";
+import { supabase } from "../supabase";
+import LoginModal from "../components/LoginModal";
+import AccountMenu from "../components/AccountMenu";
 import MapView from "../components/MapView";
 import "./LandingPage.css";
 
@@ -355,18 +358,38 @@ function LiveDemo({ navigate }) {
 
 export default function LandingPage() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const [session, setSession]     = useState(null);
+    const [showLogin, setShowLogin] = useState(searchParams.get("login") === "true");
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+            setSession(s ?? null);
+            if (s) setShowLogin(false);
+        });
+        return () => subscription.unsubscribe();
+    }, []);
+
 
     return (
         <div className="landing">
+            {showLogin && (
+                <LoginModal
+                    onClose={() => setShowLogin(false)}
+                    onSuccess={() => { setShowLogin(false); navigate("/projects"); }}
+                />
+            )}
+
             {/* Nav */}
             <nav className="landing-nav">
                 <span className="landing-nav-logo">embeddedcosine</span>
-                <div className="landing-nav-links">
-                    <a href="#demo">Interactive preview</a>
+                <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+                    <button className="landing-nav-cta" onClick={() => navigate("/projects")}>
+                        {session ? "My datasets" : "Try it out →"}
+                    </button>
+                    {session && <AccountMenu session={session} />}
                 </div>
-                <button className="landing-nav-cta" onClick={() => navigate("/projects")}>
-                    Try it out →
-                </button>
             </nav>
 
             {/* Demo */}

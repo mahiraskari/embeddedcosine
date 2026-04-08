@@ -2,10 +2,11 @@ import os
 import math
 import numpy as np
 import pandas as pd
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from services.embedder import embed_texts
 from services.indexer import load_index, search
+from auth import get_user_id_optional
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -40,12 +41,20 @@ class SimilarityRequest(BaseModel):
     project_id: str | None = None
 
 
+def _resolve_dir(demo: bool, project_id: str | None, user_id: str | None) -> str:
+    if demo:
+        return DEMO_DIR
+    if project_id and user_id:
+        return f"{PROJECTS_DIR}/{user_id}/{project_id}"
+    raise HTTPException(status_code=400, detail="Provide demo=true or project_id")
+
+
 @router.post("/similarity")
-def compute_similarity(req: SimilarityRequest):
+def compute_similarity(req: SimilarityRequest, user_id: str | None = Depends(get_user_id_optional)):
     if req.demo:
         data_dir = DEMO_DIR
-    elif req.project_id:
-        data_dir = f"{PROJECTS_DIR}/{req.project_id}"
+    elif req.project_id and user_id:
+        data_dir = f"{PROJECTS_DIR}/{user_id}/{req.project_id}"
     else:
         raise HTTPException(status_code=400, detail="Provide demo=true or project_id")
 
@@ -68,19 +77,18 @@ def compute_similarity(req: SimilarityRequest):
     if idx_a is None or idx_b is None:
         return {"similarity": None}
 
-    a = embeddings[idx_a].astype(float)
-    b = embeddings[idx_b].astype(float)
-    # Cosine similarity — +1e-8 prevents division by zero on zero vectors
+    a   = embeddings[idx_a].astype(float)
+    b   = embeddings[idx_b].astype(float)
     sim = float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-8))
     return {"similarity": round(sim, 4)}
 
 
 @router.post("")
-def search_games(req: SearchRequest):
+def search_games(req: SearchRequest, user_id: str | None = Depends(get_user_id_optional)):
     if req.demo:
         data_dir = DEMO_DIR
-    elif req.project_id:
-        data_dir = f"{PROJECTS_DIR}/{req.project_id}"
+    elif req.project_id and user_id:
+        data_dir = f"{PROJECTS_DIR}/{user_id}/{req.project_id}"
     else:
         raise HTTPException(status_code=400, detail="Provide demo=true or a project_id")
 
@@ -94,7 +102,6 @@ def search_games(req: SearchRequest):
     index        = load_index(data_dir)
     metadata     = np.load(meta_path, allow_pickle=True)
 
-    # Over-fetch from FAISS so we have room to filter out near-zero scores
     candidates = min(req.k * 30, len(metadata))
     scores, indices = search(index, query_vector, k=candidates)
 
@@ -103,7 +110,6 @@ def search_games(req: SearchRequest):
     for score, idx in zip(scores, indices):
         if idx < 0 or idx >= len(metadata):
             continue
-        # FAISS returns results in score order, so once we're below the floor we can stop
         if float(score) < MIN_SCORE:
             break
         item = {k: _sanitize_val(v) for k, v in dict(metadata[idx]).items()}

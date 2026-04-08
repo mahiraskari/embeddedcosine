@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { uploadDataset, configureDataset, PIPELINE_STREAM_URL } from "../api/client";
+import { uploadDataset, configureDataset, getPipelineStreamURL } from "../api/client";
 
 const STEPS = ["Upload", "Configure", "Build"];
 
@@ -73,7 +73,7 @@ export default function SetupView({ onDone, onBack }) {
         }
     };
 
-    const handleBuild = () => {
+    const handleBuild = async () => {
         setError(null);
         setBuilding(true);
         setProgress(0);
@@ -82,7 +82,8 @@ export default function SetupView({ onDone, onBack }) {
         if (progressRef.current) clearInterval(progressRef.current);
         if (esRef.current) esRef.current.close();
 
-        const es = new EventSource(PIPELINE_STREAM_URL);
+        const streamUrl = await getPipelineStreamURL();
+        const es = new EventSource(streamUrl);
         esRef.current = es;
 
         // UMAP emits no sub-events, so the bar would freeze at 80% or 90% for several seconds.

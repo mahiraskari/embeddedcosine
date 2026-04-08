@@ -6,29 +6,27 @@ import uuid
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from services.embedder import embed_texts, model as embedder_model
 from services.indexer import build_index
 from services.reducer import reduce
+from auth import get_user_id, get_user_id_from_token_param
 
 router = APIRouter(prefix="/dataset", tags=["dataset"])
 
-UPLOAD_PATH  = "data/uploaded_file"
-CONFIG_PATH  = "data/config.json"
 PROJECTS_DIR = "data/projects"
+CONFIG_PATH  = "data/config.json"
 
 
 def _sanitize_val(v):
-    # np.generic covers numpy scalars (int64, float32, etc.) — not JSON-serialisable as-is
     if isinstance(v, np.generic):
         v = v.item()
     try:
         if pd.isna(v):
             return None
     except (TypeError, ValueError):
-        # pd.isna raises on multi-element arrays — swallow it
         pass
     if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
         return None
@@ -41,43 +39,45 @@ def _sanitize_record(record: dict) -> dict:
 
 def _load_raw(path: str) -> pd.DataFrame:
     if path.endswith(".csv"):
-        # utf-8-sig strips the BOM Excel sometimes adds
         df = pd.read_csv(path, on_bad_lines="skip", encoding="utf-8-sig")
     else:
         try:
             df = pd.read_json(path, orient="records")
         except Exception:
-            # Fall back to object-keyed JSON (e.g. {"0": {...}, "1": {...}})
             df = pd.read_json(path, orient="index")
             df = df.reset_index()
-    # Ensure all column names are plain strings — some JSON sources use integers
     df.columns = [str(c) for c in df.columns]
     return df
 
 
-def _find_uploaded() -> str | None:
+def _upload_path(user_id: str) -> str:
+    return f"data/uploads/{user_id}"
+
+
+def _find_uploaded(user_id: str) -> str | None:
+    base = _upload_path(user_id)
     for ext in ("csv", "json"):
-        p = f"{UPLOAD_PATH}.{ext}"
+        p = f"{base}.{ext}"
         if os.path.exists(p):
             return p
     return None
 
 
 @router.post("/upload")
-async def upload_dataset(file: UploadFile = File(...)):
+async def upload_dataset(file: UploadFile = File(...), user_id: str = Depends(get_user_id)):
     ext = file.filename.rsplit(".", 1)[-1].lower()
     if ext not in ("csv", "json"):
         raise HTTPException(status_code=400, detail="Only CSV or JSON files are supported")
 
-    os.makedirs("data", exist_ok=True)
+    os.makedirs("data/uploads", exist_ok=True)
 
-    # Clear any previously uploaded file so stale data doesn't mix with the new one
+    base = _upload_path(user_id)
     for old_ext in ("csv", "json"):
-        old = f"{UPLOAD_PATH}.{old_ext}"
+        old = f"{base}.{old_ext}"
         if os.path.exists(old):
             os.remove(old)
 
-    save_path = f"{UPLOAD_PATH}.{ext}"
+    save_path = f"{base}.{ext}"
     with open(save_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
@@ -98,8 +98,8 @@ class ConfigRequest(BaseModel):
 
 
 @router.post("/configure")
-def configure_dataset(req: ConfigRequest):
-    path = _find_uploaded()
+def configure_dataset(req: ConfigRequest, user_id: str = Depends(get_user_id)):
+    path = _find_uploaded(user_id)
     if not path:
         raise HTTPException(status_code=404, detail="Upload a file first")
 
@@ -113,19 +113,16 @@ def configure_dataset(req: ConfigRequest):
     if not req.embed_cols:
         raise HTTPException(status_code=400, detail="Select at least one column to embed")
 
-    # Enforce project cap
-    MAX_PROJECTS = 10
-    if os.path.exists(PROJECTS_DIR):
-        existing = [d for d in os.listdir(PROJECTS_DIR) if os.path.isdir(f"{PROJECTS_DIR}/{d}")]
-        if len(existing) >= MAX_PROJECTS:
-            raise HTTPException(status_code=400, detail=f"Project limit reached ({MAX_PROJECTS} max). Delete a project to create a new one.")
+    user_dir = f"{PROJECTS_DIR}/{user_id}"
+    if os.path.exists(user_dir):
+        existing = [d for d in os.listdir(user_dir) if os.path.isdir(f"{user_dir}/{d}")]
+        if len(existing) >= 10:
+            raise HTTPException(status_code=400, detail="Project limit reached (10 max). Delete a project to create a new one.")
 
-    # Create a new project slot
     pid = str(uuid.uuid4())[:8]
-    project_dir = f"{PROJECTS_DIR}/{pid}"
+    project_dir = f"{user_dir}/{pid}"
     os.makedirs(project_dir, exist_ok=True)
 
-    # Resolve embed_cols — if name_col was selected, it becomes "Name" in the data
     resolved_embed_cols = [("Name" if c == req.name_col else c) for c in req.embed_cols]
 
     meta = {
@@ -137,22 +134,25 @@ def configure_dataset(req: ConfigRequest):
     with open(f"{project_dir}/meta.json", "w") as f:
         json.dump(meta, f)
 
+    # Store config keyed by user so concurrent users don't overwrite each other
     config = {
         "file_path":  path,
         "name_col":   req.name_col,
         "embed_cols": req.embed_cols,
         "columns":    cols,
         "project_id": pid,
+        "user_id":    user_id,
     }
-    with open(CONFIG_PATH, "w") as f:
+    config_path = f"data/config_{user_id}.json"
+    with open(config_path, "w") as f:
         json.dump(config, f)
 
     return {"status": "configured", "project_id": pid, **config}
 
 
 @router.get("/pipeline/stream")
-def run_pipeline_stream():
-    """SSE endpoint — streams real progress while running the pipeline."""
+def run_pipeline_stream(user_id: str = Depends(get_user_id_from_token_param)):
+    """SSE endpoint — streams real progress while the pipeline runs."""
 
     def generate():
         import json as _json
@@ -160,21 +160,18 @@ def run_pipeline_stream():
         def event(stage, pct, label, **extra):
             return f"data: {_json.dumps({'stage': stage, 'pct': pct, 'label': label, **extra})}\n\n"
 
-        if not os.path.exists(CONFIG_PATH):
+        config_path = f"data/config_{user_id}.json"
+        if not os.path.exists(config_path):
             yield event("error", 0, "Configure dataset first")
             return
 
         yield event("loading", 1, "Loading dataset…")
 
-        with open(CONFIG_PATH) as f:
+        with open(config_path) as f:
             config = _json.load(f)
 
-        if "project_id" not in config:
-            yield event("error", 0, "Please re-configure your dataset before building")
-            return
-
         pid = config["project_id"]
-        project_dir = f"{PROJECTS_DIR}/{pid}"
+        project_dir = f"{PROJECTS_DIR}/{user_id}/{pid}"
         os.makedirs(project_dir, exist_ok=True)
 
         df = _load_raw(config["file_path"])
@@ -198,7 +195,6 @@ def run_pipeline_stream():
         yield event("loading", 3, f"Loaded {n_rows:,} rows…")
 
         texts = df["__embed_text__"].tolist()
-        # Batch manually so we can yield progress events between batches
         batch_size = 32
         batches = [texts[i:i + batch_size] for i in range(0, len(texts), batch_size)]
         n_batches = len(batches)
@@ -207,7 +203,6 @@ def run_pipeline_stream():
         for i, batch in enumerate(batches):
             batch_emb = embedder_model.encode(batch, show_progress_bar=False)
             all_embeddings.append(batch_emb)
-            # Map batch progress into the 3–75% band, leaving room for later stages
             pct = 3 + int((i + 1) / n_batches * 72)
             yield event("embedding", pct, f"Analysing {i + 1} / {n_batches}…")
 
@@ -227,13 +222,12 @@ def run_pipeline_stream():
         yield event("umap3d", 90, "Finalising 3D layout…")
         reduce(n_components=3, data_dir=project_dir)
 
-        # Update project meta with final point count and resolved embed cols
         meta_path = f"{project_dir}/meta.json"
         if os.path.exists(meta_path):
             with open(meta_path) as f:
                 meta = _json.load(f)
             meta["point_count"] = n_rows
-            meta["embed_cols"] = embed_cols  # already resolved (name_col → "Name")
+            meta["embed_cols"] = embed_cols
             with open(meta_path, "w") as f:
                 _json.dump(meta, f)
 
@@ -242,17 +236,16 @@ def run_pipeline_stream():
     return StreamingResponse(
         generate(),
         media_type="text/event-stream",
-        # X-Accel-Buffering: no tells nginx not to buffer SSE — without this
-        # events arrive in one big batch at the end rather than incrementally.
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 
 @router.get("/status")
-def dataset_status():
-    has_config = os.path.exists(CONFIG_PATH)
+def dataset_status(user_id: str = Depends(get_user_id)):
+    config_path = f"data/config_{user_id}.json"
+    has_config = os.path.exists(config_path)
     config = {}
     if has_config:
-        with open(CONFIG_PATH) as f:
+        with open(config_path) as f:
             config = json.load(f)
     return {"has_config": has_config, "config": config}

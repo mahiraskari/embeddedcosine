@@ -2,7 +2,8 @@ import os
 import math
 import numpy as np
 import pandas as pd
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from auth import get_user_id
 
 router = APIRouter(prefix="/map", tags=["map"])
 
@@ -10,7 +11,6 @@ PROJECTS_DIR = "data/projects"
 
 
 def _sanitize_val(v):
-    # numpy scalars aren't JSON-serialisable — convert to native Python types first
     if isinstance(v, np.generic):
         v = v.item()
     try:
@@ -24,11 +24,11 @@ def _sanitize_val(v):
 
 
 @router.get("/points")
-def get_points(project_id: str, dims: int = 2):
+def get_points(project_id: str, dims: int = 2, user_id: str = Depends(get_user_id)):
     if dims not in (2, 3):
         raise HTTPException(status_code=400, detail="dims must be 2 or 3")
 
-    data_dir = f"{PROJECTS_DIR}/{project_id}"
+    data_dir    = f"{PROJECTS_DIR}/{user_id}/{project_id}"
     coords_path = f"{data_dir}/coords_{dims}d.npy"
     meta_path   = f"{data_dir}/metadata.npy"
 

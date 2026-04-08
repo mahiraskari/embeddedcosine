@@ -64,7 +64,7 @@ export default function ResultsPanel({ results, onClose, onFlyTo, topK = 10, onT
                 background: "#0c0c16",
                 border:    "1px solid #1e1e30",
                 borderRadius: 3,
-                boxShadow: "3px 3px 0px #000, 6px 6px 20px rgba(0,0,0,0.5)",
+                boxShadow: "5px 5px 0px #000",
                 userSelect: "none",
             }}
         >
