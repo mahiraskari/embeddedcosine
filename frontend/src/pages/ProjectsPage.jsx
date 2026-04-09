@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchProjects, renameProject, deleteProject, fetchProjectPreview } from "../api/client";
-import { supabase } from "../supabase";
-import AccountMenu from "../components/AccountMenu";
 import SetupView from "../components/SetupView";
+import Navbar from "../components/Navbar";
 
 const DOT_COLORS = ["#818cf8","#a78bfa","#c084fc","#6366f1","#38bdf8","#34d399","#fbbf24","#f87171"];
 
@@ -67,15 +66,14 @@ function MiniMap({ projectId }) {
 function ProjectCard({ project, onOpen, onDelete }) {
     const [name, setName] = useState(project.name);
     const [editing, setEditing] = useState(false);
-    const [hovering, setHovering] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
+    const [hovering, setHovering] = useState(false);
     const inputRef = useRef(null);
 
     useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
 
     const commitRename = async () => {
         const trimmed = name.trim();
-        // Revert to original if the user cleared the field entirely
         if (!trimmed) { setName(project.name); setEditing(false); return; }
         await renameProject(project.id, trimmed).catch(() => {});
         setEditing(false);
@@ -88,12 +86,22 @@ function ProjectCard({ project, onOpen, onDelete }) {
 
     return (
         <div
-            style={styles.card}
+            style={{
+                ...styles.card,
+                borderColor: hovering ? "rgba(99,102,241,0.45)" : "rgba(255,255,255,0.08)",
+                boxShadow: hovering ? "5px 5px 0px #000, 0 0 0 1px rgba(99,102,241,0.15)" : "5px 5px 0px #000",
+            }}
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => { setHovering(false); setConfirmDelete(false); }}
         >
-            {/* Top name */}
-            <div style={styles.cardTop}>
+            {/* XP Title Bar */}
+            <div style={{
+                ...styles.titleBar,
+                background: hovering
+                    ? "linear-gradient(180deg, #3a6abf 0%, #24499a 100%)"
+                    : "linear-gradient(180deg, #2d5fa8 0%, #1a3d7a 100%)",
+                transition: "background 0.15s",
+            }}>
                 {editing ? (
                     <input
                         ref={inputRef}
@@ -101,24 +109,29 @@ function ProjectCard({ project, onOpen, onDelete }) {
                         onChange={e => setName(e.target.value)}
                         onBlur={commitRename}
                         onKeyDown={handleKeyDown}
-                        style={styles.nameInput}
+                        style={styles.titleInput}
                     />
                 ) : (
                     <span
-                        style={styles.cardName}
+                        style={styles.titleText}
                         title="Click to rename"
                         onClick={() => setEditing(true)}
                     >
                         {name}
                     </span>
                 )}
+                <div style={styles.titleBtns}>
+                    <span style={styles.titleBtn}>—</span>
+                    <span style={styles.titleBtn} onClick={() => onOpen(project.id)}>□</span>
+                    <span
+                        style={{ ...styles.titleBtn, background: "linear-gradient(180deg, #e8504a 0%, #b52020 100%)" }}
+                        onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}
+                    >✕</span>
+                </div>
             </div>
 
             {/* Thumbnail */}
-            <div
-                style={styles.thumbArea}
-                onClick={() => onOpen(project.id)}
-            >
+            <div style={styles.thumbArea} onClick={() => onOpen(project.id)}>
                 {project.has_map
                     ? <MiniMap projectId={project.id} />
                     : <div style={styles.noMap}>No map yet</div>
@@ -127,26 +140,16 @@ function ProjectCard({ project, onOpen, onDelete }) {
 
             {/* Bottom info */}
             <div style={styles.cardBottom}>
-                <span style={styles.cardMeta}>
-                    {project.point_count ? `${project.point_count.toLocaleString()} points` : "building…"}
-                </span>
-
-                {/* Delete — appears on hover */}
-                {hovering && !editing && (
-                    confirmDelete ? (
-                        <div style={styles.deleteConfirm}>
-                            <span style={{ fontSize: 10, color: "#555" }}>Delete?</span>
-                            <button style={styles.confirmYes} onClick={() => onDelete(project.id)}>Yes</button>
-                            <button style={styles.confirmNo} onClick={() => setConfirmDelete(false)}>No</button>
-                        </div>
-                    ) : (
-                        <button
-                            style={styles.deleteBtn}
-                            onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}
-                        >
-                            ✕
-                        </button>
-                    )
+                {confirmDelete ? (
+                    <div style={styles.deleteConfirm}>
+                        <span style={{ fontSize: 10, color: "#555" }}>Delete?</span>
+                        <button style={styles.confirmYes} onClick={() => onDelete(project.id)}>Yes</button>
+                        <button style={styles.confirmNo} onClick={() => setConfirmDelete(false)}>No</button>
+                    </div>
+                ) : (
+                    <span style={styles.cardMeta}>
+                        {project.point_count ? `${project.point_count.toLocaleString()} points` : "building…"}
+                    </span>
                 )}
             </div>
         </div>
@@ -157,15 +160,26 @@ function NewProjectCard({ onClick }) {
     const [hovering, setHovering] = useState(false);
     return (
         <div
-            style={{ ...styles.card, ...styles.newCard, borderColor: hovering ? "#6366f1" : "#1e1e2e" }}
+            style={{ ...styles.card, ...styles.newCard, borderColor: hovering ? "rgba(99,102,241,0.5)" : "rgba(255,255,255,0.06)" }}
             onClick={onClick}
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => setHovering(false)}
         >
-            <span style={{ fontSize: 26, color: hovering ? "#6366f1" : "#2a2a3a", transition: "color 0.15s" }}>+</span>
-            <span style={{ fontSize: 12, color: hovering ? "#a5b4fc" : "#333", marginTop: 8, transition: "color 0.15s" }}>
-                New dataset
-            </span>
+            <div style={{ ...styles.titleBar, background: hovering ? "linear-gradient(180deg, #3a6abf 0%, #24499a 100%)" : "linear-gradient(180deg, #1e3d6e 0%, #112548 100%)", transition: "background 0.15s" }}>
+                <span style={styles.titleText}>new_dataset.exe</span>
+                <div style={styles.titleBtns}>
+                    <span style={styles.titleBtn}>—</span>
+                    <span style={styles.titleBtn}>□</span>
+                    <span style={{ ...styles.titleBtn, background: "linear-gradient(180deg, #e8504a 0%, #b52020 100%)" }}>✕</span>
+                </div>
+            </div>
+            <div style={{ ...styles.thumbArea, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 110 }}>
+                <span style={{ fontSize: 26, color: hovering ? "#6366f1" : "#2a2a3a", transition: "color 0.15s" }}>+</span>
+                <span style={{ fontSize: 11, color: hovering ? "#a5b4fc" : "#333", marginTop: 6, transition: "color 0.15s", fontFamily: "monospace" }}>
+                    New dataset
+                </span>
+            </div>
+            <div style={styles.cardBottom} />
         </div>
     );
 }
@@ -175,11 +189,6 @@ export default function ProjectsPage() {
     const [projects, setProjects] = useState([]);
     const [showSetup, setShowSetup] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [session, setSession] = useState(null);
-
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
-    }, []);
 
     const load = () => {
         fetchProjects().then(d => setProjects(d.projects)).finally(() => setLoading(false));
@@ -207,20 +216,7 @@ export default function ProjectsPage() {
 
     return (
         <div style={styles.page}>
-            <nav style={styles.nav}>
-                <span style={styles.navLogo} onClick={() => navigate("/")}>embeddedcosine</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <button
-                        onClick={() => navigate("/")}
-                        style={styles.backBtn}
-                        onMouseEnter={e => e.currentTarget.style.color = "#a5b4fc"}
-                        onMouseLeave={e => e.currentTarget.style.color = "#555"}
-                    >
-                        ← Back
-                    </button>
-                    {session && <AccountMenu session={session} />}
-                </div>
-            </nav>
+            <Navbar />
 
             <div style={styles.content}>
                 <div style={styles.pageHeader}>
@@ -262,25 +258,6 @@ const styles = {
         color: "#e2e2e2",
         fontFamily: '"Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     },
-    nav: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "12px 28px",
-        borderBottom: "1px solid #111",
-        background: "rgba(5,5,10,0.95)",
-        backdropFilter: "blur(12px)",
-    },
-    navLogo: {
-        fontSize: 15, fontWeight: 700, color: "#fff",
-        letterSpacing: "-0.4px", cursor: "pointer",
-    },
-    backBtn: {
-        background: "none", border: "none",
-        color: "#555", fontSize: 12, cursor: "pointer",
-        padding: "0 12px 0 0", fontFamily: "inherit",
-        transition: "color 0.12s", letterSpacing: "0.02em",
-    },
     content: {
         maxWidth: 1400,
         margin: "0 auto",
@@ -302,58 +279,93 @@ const styles = {
         gap: 16,
     },
     card: {
-        background: "#0c0c14",
-        border: "1px solid #1a1a28",
-        borderRadius: 3,
+        background: "#08080f",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: 6,
         overflow: "hidden",
-        position: "relative",
+        boxShadow: "5px 5px 0px #000",
         transition: "border-color 0.15s",
     },
-    cardTop: {
-        padding: "10px 12px 8px",
-        borderBottom: "1px solid #111",
+    titleBar: {
+        background: "linear-gradient(180deg, #2d5fa8 0%, #1a3d7a 100%)",
+        padding: "7px 10px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        userSelect: "none",
+    },
+    titleText: {
+        fontSize: 11,
+        fontWeight: 600,
+        color: "#fff",
+        letterSpacing: "0.01em",
+        fontFamily: "monospace",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        cursor: "text",
+        flex: 1,
+        minWidth: 0,
+        marginRight: 6,
+    },
+    titleInput: {
+        fontSize: 11,
+        fontWeight: 600,
+        color: "#fff",
+        background: "transparent",
+        border: "none",
+        borderBottom: "1px solid rgba(255,255,255,0.4)",
+        outline: "none",
+        flex: 1,
+        minWidth: 0,
+        marginRight: 6,
+        padding: 0,
+        fontFamily: "monospace",
+        letterSpacing: "0.01em",
+    },
+    titleBtns: {
+        display: "flex",
+        gap: 4,
+        flexShrink: 0,
+    },
+    titleBtn: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 16,
+        height: 13,
+        borderRadius: 2,
+        background: "linear-gradient(180deg, #4a7fd4 0%, #2a5aa8 100%)",
+        border: "1px solid rgba(0,0,0,0.35)",
+        fontSize: 7,
+        color: "#fff",
+        fontWeight: 700,
+        cursor: "pointer",
+        userSelect: "none",
+        letterSpacing: 0,
+        lineHeight: 1,
     },
     thumbArea: {
         background: "#07070d",
         cursor: "pointer",
         height: 110,
         overflow: "hidden",
-        borderBottom: "1px solid #111",
     },
     noMap: {
         display: "flex", alignItems: "center", justifyContent: "center",
         height: "100%", fontSize: 11, color: "#2a2a3a",
     },
     cardBottom: {
-        padding: "10px 12px 12px",
-        display: "flex", flexDirection: "column", gap: 3,
-        position: "relative",
-    },
-    cardName: {
-        fontSize: 13, fontWeight: 600, color: "#e2e2e2",
-        cursor: "text", letterSpacing: "-0.2px",
-        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-    },
-    nameInput: {
-        fontSize: 13, fontWeight: 600, color: "#e2e2e2",
-        background: "transparent", border: "none",
-        borderBottom: "1px solid #6366f1",
-        outline: "none", width: "100%", padding: 0,
-        fontFamily: "inherit", letterSpacing: "-0.2px",
+        padding: "8px 10px 10px",
+        display: "flex", alignItems: "center", gap: 3,
+        minHeight: 32,
+        background: "#08080f",
+        borderTop: "1px solid rgba(255,255,255,0.03)",
     },
     cardMeta: {
-        fontSize: 11, color: "#2a2a3a",
-    },
-    deleteBtn: {
-        position: "absolute", top: 10, right: 10,
-        background: "none", border: "none",
-        color: "#333", fontSize: 11,
-        cursor: "pointer", padding: "2px 4px",
-        transition: "color 0.12s",
-        lineHeight: 1,
+        fontSize: 11, color: "#2a2a3a", fontFamily: "monospace",
     },
     deleteConfirm: {
-        position: "absolute", top: 8, right: 8,
         display: "flex", alignItems: "center", gap: 4,
     },
     confirmYes: {
@@ -367,10 +379,9 @@ const styles = {
         borderRadius: 2, cursor: "pointer",
     },
     newCard: {
-        display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        minHeight: 160, cursor: "pointer",
-        borderStyle: "dashed", transition: "border-color 0.15s",
+        cursor: "pointer",
+        transition: "border-color 0.15s",
+        overflow: "hidden",
     },
     empty: {
         color: "#2a2a3a", fontSize: 13,

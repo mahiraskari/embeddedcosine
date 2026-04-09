@@ -1,4 +1,5 @@
 import os
+import re
 import math
 import numpy as np
 import pandas as pd
@@ -7,6 +8,8 @@ from pydantic import BaseModel
 from services.embedder import embed_texts
 from services.indexer import load_index, search
 from auth import get_user_id_optional
+
+_SAFE_ID = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -27,6 +30,9 @@ def _sanitize_val(v):
     return v
 
 
+MAX_QUERY_LEN = 500
+MAX_K = 100
+
 class SearchRequest(BaseModel):
     query: str
     k: int = 10
@@ -45,6 +51,8 @@ def _resolve_dir(demo: bool, project_id: str | None, user_id: str | None) -> str
     if demo:
         return DEMO_DIR
     if project_id and user_id:
+        if not _SAFE_ID.match(project_id):
+            raise HTTPException(status_code=400, detail="Invalid project id")
         return f"{PROJECTS_DIR}/{user_id}/{project_id}"
     raise HTTPException(status_code=400, detail="Provide demo=true or project_id")
 
@@ -54,6 +62,8 @@ def compute_similarity(req: SimilarityRequest, user_id: str | None = Depends(get
     if req.demo:
         data_dir = DEMO_DIR
     elif req.project_id and user_id:
+        if not _SAFE_ID.match(req.project_id):
+            raise HTTPException(status_code=400, detail="Invalid project id")
         data_dir = f"{PROJECTS_DIR}/{user_id}/{req.project_id}"
     else:
         raise HTTPException(status_code=400, detail="Provide demo=true or project_id")
@@ -85,9 +95,16 @@ def compute_similarity(req: SimilarityRequest, user_id: str | None = Depends(get
 
 @router.post("")
 def search_games(req: SearchRequest, user_id: str | None = Depends(get_user_id_optional)):
+    if not req.query or not req.query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+    if len(req.query) > MAX_QUERY_LEN:
+        raise HTTPException(status_code=400, detail=f"Query too long ({MAX_QUERY_LEN} char max)")
+    req = req.model_copy(update={"k": max(1, min(req.k, MAX_K))})
     if req.demo:
         data_dir = DEMO_DIR
     elif req.project_id and user_id:
+        if not _SAFE_ID.match(req.project_id):
+            raise HTTPException(status_code=400, detail="Invalid project id")
         data_dir = f"{PROJECTS_DIR}/{user_id}/{req.project_id}"
     else:
         raise HTTPException(status_code=400, detail="Provide demo=true or a project_id")

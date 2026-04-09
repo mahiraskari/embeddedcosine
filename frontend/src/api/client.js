@@ -1,8 +1,10 @@
 import axios from "axios";
 import { supabase } from "../supabase";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 const api = axios.create({
-    baseURL: "http://localhost:8000",
+    baseURL: API_URL,
     timeout: 8000,
 });
 
@@ -80,6 +82,7 @@ export async function uploadDataset(file, onProgress) {
     form.append("file", file);
     const response = await api.post("/dataset/upload", form, {
         headers: { "Content-Type": "multipart/form-data" },
+        timeout: 60000,
         onUploadProgress: (e) => {
             if (e.total) onProgress?.(Math.round((e.loaded / e.total) * 100));
         },
@@ -103,5 +106,5 @@ export async function computeSimilarity(nameA, nameB, demo = false, projectId = 
 export async function getPipelineStreamURL() {
     const { data } = await supabase.auth.getSession();
     const token = data?.session?.access_token ?? "";
-    return `http://localhost:8000/dataset/pipeline/stream?token=${token}`;
+    return `${API_URL}/dataset/pipeline/stream?token=${token}`;
 }

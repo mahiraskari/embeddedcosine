@@ -42,6 +42,18 @@
 }
 .landing-nav-links a:hover { color: #e2e2e2; }
 
+.landing-nav-link {
+    background: none;
+    border: none;
+    color: #444;
+    font-size: 13px;
+    cursor: pointer;
+    transition: color 0.15s;
+    font-family: inherit;
+    padding: 0;
+}
+.landing-nav-link:hover { color: #e2e2e2; }
+
 .landing-nav-login {
     background: none;
     border: 1px solid #1e1e2e;
@@ -456,20 +468,22 @@
 }
 
 .live-demo-wrap {
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 0;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
     overflow: hidden;
     background: #08080f;
+    box-shadow: 5px 5px 0px #000;
 }
 
 .live-demo-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 16px;
-    background: #0c0c18;
+    padding: 7px 12px;
+    background: linear-gradient(180deg, #2d5fa8 0%, #1a3d7a 100%);
     border-bottom: 1px solid rgba(255,255,255,0.05);
     gap: 12px;
+    user-select: none;
 }
 
 .live-demo-bar-left {
@@ -478,18 +492,39 @@
     gap: 6px;
 }
 
-.live-demo-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #f87171;
-    flex-shrink: 0;
-}
-
 .live-demo-bar-title {
     font-size: 12px;
-    color: #333;
-    margin-left: 8px;
+    font-weight: 600;
+    color: #fff;
+    font-family: monospace;
+    letter-spacing: 0.01em;
+}
+
+.live-demo-xp-btns {
+    display: flex;
+    gap: 5px;
+    margin-left: 4px;
+}
+
+.live-demo-xp-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #4a7fd4 0%, #2a5aa8 100%);
+    border: 1px solid rgba(0,0,0,0.35);
+    font-size: 11px;
+    color: #fff;
+    font-weight: 700;
+    cursor: default;
+    letter-spacing: 0;
+    line-height: 1;
+}
+
+.live-demo-xp-btn--close {
+    background: linear-gradient(180deg, #e8504a 0%, #b52020 100%);
 }
 
 .live-demo-bar-right {
@@ -654,7 +689,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 10px 16px;
-    background: #0c0c18;
+    background: #08080f;
     border-top: 1px solid rgba(255,255,255,0.05);
 }
 

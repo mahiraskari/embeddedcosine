@@ -17,6 +17,10 @@ faiss-cpu                # Facebook's fast nearest-neighbour index (CPU version)
 umap-learn               # UMAP algorithm
 scikit-learn             # UMAP depends on this; also useful for PCA later
 
+# ── Auth ──────────────────────────────────────────────────
+python-jose[cryptography] # JWT decoding + JWKS verification (ES256)
+requests                 # fetches Supabase JWKS public keys
+
 # ── Config / utilities ────────────────────────────────────
 python-dotenv            # loads .env file into environment variables
 pydantic                 # data validation for API request/response models (FastAPI uses this)

@@ -1,9 +1,12 @@
 import os
+import re
 import math
 import numpy as np
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Depends
 from auth import get_user_id
+
+_SAFE_ID = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 router = APIRouter(prefix="/map", tags=["map"])
 
@@ -27,6 +30,8 @@ def _sanitize_val(v):
 def get_points(project_id: str, dims: int = 2, user_id: str = Depends(get_user_id)):
     if dims not in (2, 3):
         raise HTTPException(status_code=400, detail="dims must be 2 or 3")
+    if not _SAFE_ID.match(project_id):
+        raise HTTPException(status_code=400, detail="Invalid project id")
 
     data_dir    = f"{PROJECTS_DIR}/{user_id}/{project_id}"
     coords_path = f"{data_dir}/coords_{dims}d.npy"

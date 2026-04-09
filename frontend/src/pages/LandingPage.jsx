@@ -4,6 +4,7 @@ import { searchGames, fetchDemoPoints } from "../api/client";
 import { supabase } from "../supabase";
 import LoginModal from "../components/LoginModal";
 import AccountMenu from "../components/AccountMenu";
+import Navbar from "../components/Navbar";
 import MapView from "../components/MapView";
 import "./LandingPage.css";
 
@@ -294,7 +295,7 @@ function LiveDemo({ navigate }) {
             {/* Controls bar */}
             <div className="live-demo-bar">
                 <div className="live-demo-bar-left">
-                    <span className="live-demo-bar-title">embeddedcosine · Drug Side Effects</span>
+                    <span className="live-demo-bar-title">embeddedcosine_preview.exe</span>
                 </div>
                 <div className="live-demo-bar-right">
                     <form className="live-demo-search" onSubmit={handleSearch}>
@@ -327,6 +328,11 @@ function LiveDemo({ navigate }) {
                         <button onClick={() => setDims(2)}>2D</button>
                         <button onClick={() => setDims(3)}>3D</button>
                     </div>
+                    <div className="live-demo-xp-btns">
+                        <span className="live-demo-xp-btn">—</span>
+                        <span className="live-demo-xp-btn" style={{ cursor: "pointer" }} onClick={() => navigate("/map?demo=true")}>□</span>
+                        <span className="live-demo-xp-btn live-demo-xp-btn--close">✕</span>
+                    </div>
                 </div>
             </div>
 
@@ -344,8 +350,8 @@ function LiveDemo({ navigate }) {
 
             {/* Footer bar */}
             <div className="live-demo-footer">
-                <span style={{ color: "#2a2a3a", fontSize: 11 }}>
-                    {points2d ? `${points2d.length.toLocaleString()} drugs · closer = more similar side effects` : ""}
+                <span style={{ color: "#4a4a5a", fontSize: 11, fontFamily: "monospace" }}>
+                    {points2d ? `${points2d.length.toLocaleString()} drugs · the closer two points, the more similar their side effects` : ""}
                 </span>
                 <button className="btn-primary" style={{ fontSize: 12, padding: "6px 14px" }}
                     onClick={() => navigate("/map?demo=true")}>
@@ -381,16 +387,7 @@ export default function LandingPage() {
                 />
             )}
 
-            {/* Nav */}
-            <nav className="landing-nav">
-                <span className="landing-nav-logo">embeddedcosine</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-                    <button className="landing-nav-cta" onClick={() => navigate("/datasets")}>
-                        {session ? "My datasets" : "Try it out →"}
-                    </button>
-                    {session && <AccountMenu session={session} />}
-                </div>
-            </nav>
+            <Navbar />
 
             {/* Demo */}
             <section className="section section-wide" id="demo">

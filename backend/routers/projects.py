@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import shutil
 import math
@@ -10,6 +11,13 @@ from auth import get_user_id
 router = APIRouter(prefix="/projects", tags=["projects"])
 PROJECTS_DIR = "data/projects"
 MAX_PROJECTS = 10
+
+
+_SAFE_ID = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+def _validate_id(value: str, label: str = "id") -> None:
+    if not _SAFE_ID.match(value):
+        raise HTTPException(status_code=400, detail=f"Invalid {label}")
 
 
 def _user_dir(user_id: str) -> str:
@@ -53,6 +61,7 @@ class RenameRequest(BaseModel):
 
 @router.patch("/{pid}")
 def rename_project(pid: str, req: RenameRequest, user_id: str = Depends(get_user_id)):
+    _validate_id(pid, "project id")
     meta = _load_meta(user_id, pid)
     meta["name"] = req.name.strip() or meta["name"]
     with open(_meta_path(user_id, pid), "w") as f:
@@ -62,6 +71,7 @@ def rename_project(pid: str, req: RenameRequest, user_id: str = Depends(get_user
 
 @router.delete("/{pid}")
 def delete_project(pid: str, user_id: str = Depends(get_user_id)):
+    _validate_id(pid, "project id")
     project_dir = f"{_user_dir(user_id)}/{pid}"
     if not os.path.exists(project_dir):
         raise HTTPException(status_code=404, detail="Project not found")
@@ -71,11 +81,13 @@ def delete_project(pid: str, user_id: str = Depends(get_user_id)):
 
 @router.get("/{pid}/meta")
 def get_project_meta(pid: str, user_id: str = Depends(get_user_id)):
+    _validate_id(pid, "project id")
     return _load_meta(user_id, pid)
 
 
 @router.get("/{pid}/preview")
 def project_preview(pid: str, user_id: str = Depends(get_user_id)):
+    _validate_id(pid, "project id")
     coords_path = f"{_user_dir(user_id)}/{pid}/coords_2d.npy"
     if not os.path.exists(coords_path):
         raise HTTPException(status_code=404, detail="No map yet")

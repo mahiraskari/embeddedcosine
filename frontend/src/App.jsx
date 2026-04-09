@@ -4,6 +4,8 @@ import { supabase } from "./supabase";
 import LandingPage from "./pages/LandingPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import MapApp from "./pages/MapApp";
+import AboutPage from "./pages/AboutPage";
+import SupportPage from "./pages/SupportPage";
 
 // Wraps routes that require a logged-in user.
 // Redirects to /login if there's no active session.
@@ -30,6 +32,8 @@ export default function App() {
             <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/map" element={<MapApp />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/support" element={<SupportPage />} />
                 <Route
                     path="/datasets"
                     element={
