@@ -37,7 +37,18 @@ data/*.db
 *.faiss
 *.index
 *.npy
-backend/data/
+
+# ── All backend data except the demo dataset ──────────────────────────────────
+backend/data/uploads/
+backend/data/projects/
+backend/data/config*.json
+backend/data/uploaded_file.*
+
+# ── But keep the demo dataset — needed for the landing page ───────────────────
+!backend/data/demo/
+!backend/data/demo/*.npy
+!backend/data/demo/*.faiss
+!backend/data/demo/meta.json
 
 # ── Model cache (downloaded by sentence-transformers) ─────
 backend/model_cache/

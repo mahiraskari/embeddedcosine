@@ -171,6 +171,7 @@ export default function SetupView({ onDone, onBack }) {
                         <p style={styles.hint}>
                             Upload a CSV or JSON file to get started.
                         </p>
+                        <p style={styles.limitNote}>25 MB file size limit.</p>
                         <div
                             style={styles.dropzone}
                             onClick={() => fileRef.current.click()}
@@ -347,6 +348,9 @@ const styles = {
     },
     hint: {
         fontSize: 13, color: "#888", lineHeight: 1.6,
+    },
+    limitNote: {
+        fontSize: 11, color: "#555", fontFamily: "monospace",
     },
     dropzone: {
         border: "1px solid #1e1e30",
