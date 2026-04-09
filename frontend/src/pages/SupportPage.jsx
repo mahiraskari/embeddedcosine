@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import Navbar from "../components/Navbar";
 
-const DONATE_URL = "https://github.com/sponsors/mahiraskari";
+const TIP_URL = "https://github.com/sponsors/mahiraskari";
 const KOFI_URL = "https://ko-fi.com/mahiraskari";
 
 const TOWARD = [
@@ -84,13 +84,13 @@ export default function SupportPage() {
                 </XPWindow>
 
                 <XPWindow title="tip.exe" initialPos={{ x: 760, y: 200 }} width={640} containerRef={canvasRef}>
-                    <div style={s.donateInner}>
-                        <p style={s.donateText}>
+                    <div style={s.tipInner}>
+                        <p style={s.tipText}>
                             Everything here runs on real servers, real compute, and real time.
                             If you've found value in it, a tip goes a long way.
                         </p>
                         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                            <a href={DONATE_URL} target="_blank" rel="noopener noreferrer" style={s.btn}>
+                            <a href={TIP_URL} target="_blank" rel="noopener noreferrer" style={s.btn}>
                                 GitHub Sponsors
                             </a>
                             <a href={KOFI_URL} target="_blank" rel="noopener noreferrer" style={{ ...s.btn, background: "linear-gradient(180deg, #5c9e31 0%, #3d6e1f 100%)" }}>
@@ -212,12 +212,12 @@ const s = {
         boxSizing: "border-box",
         overflow: "hidden",
     },
-    donateInner: {
+    tipInner: {
         display: "flex",
         flexDirection: "column",
         gap: 16,
     },
-    donateText: {
+    tipText: {
         fontSize: 14,
         color: "#555",
         lineHeight: 1.75,
