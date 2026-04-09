@@ -77,18 +77,17 @@ export default function SupportPage() {
             <div ref={canvasRef} style={s.canvas}>
 
                 <XPWindow title="keep_it_running.txt" initialPos={{ x: 240, y: 100 }} width={620} containerRef={canvasRef}>
-
                     <p style={s.heroSub}>
-                        embeddedcosine is free to use. If you think it's cool or found
-                        a use for it, a small donation helps keep it running and improving.
+                        embeddedcosine is free to use. If you find it useful or just think it's cool,
+                        leaving a tip helps keep the servers running and the project improving.
                     </p>
                 </XPWindow>
 
-                <XPWindow title="donate.exe" initialPos={{ x: 760, y: 200 }} width={640} containerRef={canvasRef}>
+                <XPWindow title="tip.exe" initialPos={{ x: 760, y: 200 }} width={640} containerRef={canvasRef}>
                     <div style={s.donateInner}>
                         <p style={s.donateText}>
                             Everything here runs on real servers, real compute, and real time.
-                            Any contribution goes a long way toward keeping this tool free and improving.
+                            If you've found value in it, a tip goes a long way.
                         </p>
                         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                             <a href={DONATE_URL} target="_blank" rel="noopener noreferrer" style={s.btn}>

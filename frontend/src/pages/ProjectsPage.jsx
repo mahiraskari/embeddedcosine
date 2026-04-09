@@ -224,8 +224,8 @@ export default function ProjectsPage() {
                     <p style={styles.pageSubtitle}>
                         Each dataset is mapped in semantic space.
                         {projects.length > 0 && (
-                            <span style={{ color: projects.length >= 10 ? "#f87171" : "#2a2a3a", marginLeft: 8 }}>
-                                {projects.length} / 10
+                            <span style={{ color: projects.length >= 4 ? "#f87171" : "#2a2a3a", marginLeft: 8 }}>
+                                {projects.length} / 4
                             </span>
                         )}
                     </p>
@@ -235,7 +235,7 @@ export default function ProjectsPage() {
                     <div style={styles.empty}>Loading…</div>
                 ) : (
                     <div style={styles.grid}>
-                        {projects.length < 10 && <NewProjectCard onClick={() => setShowSetup(true)} />}
+                        {projects.length < 4 && <NewProjectCard onClick={() => setShowSetup(true)} />}
                         {projects.map(p => (
                             <ProjectCard
                                 key={p.id}

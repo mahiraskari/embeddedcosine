@@ -6,6 +6,7 @@ import ProjectsPage from "./pages/ProjectsPage";
 import MapApp from "./pages/MapApp";
 import AboutPage from "./pages/AboutPage";
 import SupportPage from "./pages/SupportPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 // Wraps routes that require a logged-in user.
 // Redirects to /login if there's no active session.
@@ -34,6 +35,7 @@ export default function App() {
                 <Route path="/map" element={<MapApp />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/support" element={<SupportPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route
                     path="/datasets"
                     element={

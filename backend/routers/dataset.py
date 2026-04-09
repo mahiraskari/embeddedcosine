@@ -123,8 +123,8 @@ def configure_dataset(req: ConfigRequest, user_id: str = Depends(get_user_id)):
     user_dir = f"{PROJECTS_DIR}/{user_id}"
     if os.path.exists(user_dir):
         existing = [d for d in os.listdir(user_dir) if os.path.isdir(f"{user_dir}/{d}")]
-        if len(existing) >= 10:
-            raise HTTPException(status_code=400, detail="Project limit reached (10 max). Delete a project to create a new one.")
+        if len(existing) >= 4:
+            raise HTTPException(status_code=400, detail="Project limit reached (4 max). Delete a project to create a new one.")
 
     pid = str(uuid.uuid4())[:8]
     project_dir = f"{user_dir}/{pid}"

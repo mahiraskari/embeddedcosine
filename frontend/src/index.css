@@ -2,6 +2,11 @@
     box-sizing: border-box;
 }
 
+html {
+    scrollbar-gutter: stable;
+    overflow-y: scroll;
+}
+
 body {
     margin: 0;
     background: #05050a;

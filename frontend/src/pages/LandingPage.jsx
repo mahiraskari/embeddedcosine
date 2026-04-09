@@ -155,18 +155,8 @@ function DemoSearch() {
     const [loading, setLoading]   = useState(false);
     const [searched, setSearched] = useState(false);
     const [columns, setColumns]   = useState([]);
-    const [field, setField]       = useState("Name"); // which column to display in results
+    const [field, setField]       = useState("Name");
     const [embeddedBy, setEmbeddedBy] = useState("");
-
-    useEffect(() => {
-        fetchDatasetStatus().then(s => {
-            if (s.config?.columns) {
-                setColumns(s.config.columns);
-                setField(s.config.name_col || s.config.columns[0]);
-                setEmbeddedBy(s.config.text_col || "");
-            }
-        }).catch(() => {});
-    }, []);
 
     const handleSearch = async (e) => {
         e.preventDefault();
