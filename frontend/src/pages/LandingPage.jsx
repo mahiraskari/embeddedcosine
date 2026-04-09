@@ -377,7 +377,7 @@ export default function LandingPage() {
             {showLogin && (
                 <LoginModal
                     onClose={() => setShowLogin(false)}
-                    onSuccess={() => { setShowLogin(false); navigate("/projects"); }}
+                    onSuccess={() => { setShowLogin(false); navigate("/datasets"); }}
                 />
             )}
 
@@ -385,7 +385,7 @@ export default function LandingPage() {
             <nav className="landing-nav">
                 <span className="landing-nav-logo">embeddedcosine</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-                    <button className="landing-nav-cta" onClick={() => navigate("/projects")}>
+                    <button className="landing-nav-cta" onClick={() => navigate("/datasets")}>
                         {session ? "My datasets" : "Try it out →"}
                     </button>
                     {session && <AccountMenu session={session} />}

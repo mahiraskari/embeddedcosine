@@ -8,7 +8,7 @@ import MapApp from "./pages/MapApp";
 // Wraps routes that require a logged-in user.
 // Redirects to /login if there's no active session.
 function ProtectedRoute({ session, children }) {
-    if (session === undefined) return null; // still loading
+    if (session === undefined) return <div style={{ minHeight: "100vh", background: "#05050a" }} />;
     if (!session) return <Navigate to="/?login=true" replace />;
     return children;
 }
@@ -31,7 +31,7 @@ export default function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/map" element={<MapApp />} />
                 <Route
-                    path="/projects"
+                    path="/datasets"
                     element={
                         <ProtectedRoute session={session}>
                             <ProjectsPage />

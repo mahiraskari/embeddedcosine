@@ -26,7 +26,7 @@ export default function MapApp() {
     const flyToRef                          = useRef(null);
 
     useEffect(() => {
-        if (!isDemo && !projectId) { navigate("/projects"); return; }
+        if (!isDemo && !projectId) { navigate("/datasets"); return; }
         // Fetch embed cols once on mount
         const metaReq = isDemo ? fetchDemoMeta() : fetchProjectMeta(projectId);
         metaReq.then(m => setEmbedCols(m.embed_cols || [])).catch(() => {});
@@ -78,7 +78,7 @@ export default function MapApp() {
     return (
         <div className="app">
             <header className="header">
-                <span className="logo" onClick={() => navigate(isDemo ? "/" : "/projects")} style={{ cursor: "pointer" }}>
+                <span className="logo" onClick={() => navigate(isDemo ? "/" : "/datasets")} style={{ cursor: "pointer" }}>
                     embeddedcosine
                 </span>
                 <button className="load-dataset-btn" onClick={() => setShowKeys(v => !v)}>
@@ -108,7 +108,7 @@ export default function MapApp() {
                         Voronoi
                     </button>
                 )}
-                <button className="load-dataset-btn" onClick={() => navigate(isDemo ? "/" : "/projects")}>
+                <button className="load-dataset-btn" onClick={() => navigate(isDemo ? "/" : "/datasets")}>
                     {isDemo ? "← Home" : "← Datasets"}
                 </button>
             </header>

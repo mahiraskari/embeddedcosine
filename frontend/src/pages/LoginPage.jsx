@@ -7,7 +7,7 @@ export default function LoginPage() {
         <div style={{ minHeight: "100vh", background: "#05050a" }}>
             <LoginModal
                 onClose={() => navigate("/")}
-                onSuccess={() => navigate("/projects")}
+                onSuccess={() => navigate("/datasets")}
             />
         </div>
     );

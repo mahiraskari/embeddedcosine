@@ -17,6 +17,17 @@ api.interceptors.request.use(async (config) => {
     return config;
 });
 
+// If any request comes back 401, the session has expired — send the user back to login.
+api.interceptors.response.use(
+    res => res,
+    err => {
+        if (err.response?.status === 401) {
+            window.location.href = "/?login=true";
+        }
+        return Promise.reject(err);
+    }
+);
+
 export async function fetchDemoPoints(dims = 2) {
     const response = await api.get(`/demo/points?dims=${dims}`);
     return response.data;
