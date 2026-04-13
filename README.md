@@ -1,4 +1,4 @@
-# embeddedcosine
+# embeddedcosine — [embeddedcosine.com](https://embeddedcosine.com)
 
 embeddedcosine turns any structured dataset into a navigable semantic map. Similar things cluster together. You search by meaning, not keywords.
 

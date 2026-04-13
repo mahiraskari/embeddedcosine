@@ -113,7 +113,7 @@ export default function AboutPage() {
                     ))}
                 </XPWindow>
 
-                <XPWindow title="run_locally.txt" initialPos={{ x: 100, y: 570 }} width={400} containerRef={canvasRef}>
+                <XPWindow title="run_locally.txt" initialPos={{ x: 280, y: 562 }} width={400} containerRef={canvasRef}>
                     <p style={s.readmeText}>
                         There is a local branch of this project made specifically to run it on your
                         own machine without any of the account setup, server limits, or extra configuration.
@@ -132,7 +132,7 @@ export default function AboutPage() {
                     </a>
                 </XPWindow>
 
-                <XPWindow title="readme.txt" initialPos={{ x: 540, y: 490 }} width={800} containerRef={canvasRef}>
+                <XPWindow title="readme.txt" initialPos={{ x: 730, y: 510 }} width={800} containerRef={canvasRef}>
                     <p style={s.readmeText}>
                         embeddedcosine turns any structured dataset into a navigable semantic map.
                         Similar things cluster together. You search by meaning, not keywords.
