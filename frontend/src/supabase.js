@@ -1,6 +1,8 @@
-import { createClient } from "@supabase/supabase-js";
-
-const url = import.meta.env.VITE_SUPABASE_URL;
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-export const supabase = createClient(url, key);
+// Local branch — no Supabase needed.
+export const supabase = {
+    auth: {
+        getSession: async () => ({ data: { session: null } }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        signOut: async () => {},
+    },
+};

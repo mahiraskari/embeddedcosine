@@ -1,7 +1,4 @@
-import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "../supabase";
-import AccountMenu from "./AccountMenu";
 
 const LINKS = [
     { label: "About",   path: "/about" },
@@ -11,13 +8,6 @@ const LINKS = [
 export default function Navbar() {
     const navigate = useNavigate();
     const location = useLocation();
-    const [session, setSession] = useState(undefined);
-
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s ?? null));
-        return () => subscription.unsubscribe();
-    }, []);
 
     return (
         <nav style={s.nav}>
@@ -30,12 +20,9 @@ export default function Navbar() {
                         {label}
                     </button>
                 ))}
-                {session !== undefined && (
-                    <button style={s.cta} onClick={() => navigate("/datasets")}>
-                        {session ? "My datasets" : "Try it out →"}
-                    </button>
-                )}
-                {session && <AccountMenu session={session} />}
+                <button style={s.cta} onClick={() => navigate("/datasets")}>
+                    My datasets
+                </button>
             </div>
         </nav>
     );
