@@ -10,6 +10,8 @@ app = FastAPI(
     title="embeddedcosine",
     description="Turn structured data into a navigable semantic map.",
     version="0.1.0",
+    docs_url=None,
+    redoc_url=None,
 )
 
 # Allow the React frontend (port 5173) to talk to this backend (port 8000).
