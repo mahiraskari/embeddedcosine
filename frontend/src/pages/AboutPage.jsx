@@ -113,6 +113,25 @@ export default function AboutPage() {
                     ))}
                 </XPWindow>
 
+                <XPWindow title="run_locally.txt" initialPos={{ x: 100, y: 570 }} width={400} containerRef={canvasRef}>
+                    <p style={s.readmeText}>
+                        There is a local branch of this project made specifically to run it on your
+                        own machine without any of the account setup, server limits, or extra configuration.
+                        Follow the README commands in the link below to get started.
+                    </p>
+                    <p style={s.readmeText}>
+                        No sign in, no file size limit, no rate limits. Everything runs on your CPU and is typically 4–10x faster than the hosted version depending on your specs.
+                    </p>
+                    <a
+                        href="https://github.com/mahiraskari/embeddedcosine/tree/local"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#818cf8", fontSize: 12, textDecoration: "none", borderBottom: "1px solid rgba(129,140,248,0.3)" }}
+                    >
+                        github.com/mahiraskari/embeddedcosine/tree/local →
+                    </a>
+                </XPWindow>
+
                 <XPWindow title="readme.txt" initialPos={{ x: 540, y: 490 }} width={800} containerRef={canvasRef}>
                     <p style={s.readmeText}>
                         embeddedcosine turns any structured dataset into a navigable semantic map.
@@ -204,7 +223,7 @@ const s = {
     canvas: {
         position: "relative",
         width: "100%",
-        height: 920,
+        height: 1020,
         padding: "32px 48px",
         boxSizing: "border-box",
         overflow: "hidden",

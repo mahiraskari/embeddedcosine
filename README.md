@@ -1,34 +1,54 @@
 # embeddedcosine
 
-Turn structured data into a navigable semantic map.
+embeddedcosine turns any structured dataset into a navigable semantic map. Similar things cluster together. You search by meaning, not keywords.
 
-Upload a dataset. Explore it by meaning, not by rows.
+It is a personal project built because I wanted to actually see what embedding models do to data, and thought others might too. Free to use at [embeddedcosine.com](https://embeddedcosine.com).
 
-## What it does
+---
 
-- Upload a CSV (games, films, anime, papers — anything with text)
-- Select which rows you want to embed
-- Generate vector embeddings locally (no API key needed)
-- Explore an interactive 2D map — zoom, pan, click
-- Click any item to see its top 5 most similar neighbours
-- Search semantically — your query becomes a point on the map
-- Compare cosine similarity, dot product, and Euclidean distance
+## How it works
+
+1. Upload a CSV or JSON dataset
+2. Pick a display name column and one or more columns to embed
+3. The AI model reads each row and converts it into a vector that captures its meaning
+4. FAISS builds a cosine similarity index and UMAP projects everything into 2D and 3D space
+5. Pan, zoom, fly through the point cloud, search by concept, click any point for details
+
+Steps 3 and 4 are where the name comes from. **embedded** + **cosine** = embeddedcosine.
+
+---
 
 ## Stack
 
 | Layer | Tech |
 |-------|------|
-| Backend | FastAPI (Python) |
-| Data | pandas + NumPy |
-| Embeddings | sentence-transformers (local, no API key) |
-| Vector search | FAISS |
-| Dimensionality reduction | UMAP |
-| Frontend | React + Plotly |
+| Embeddings | all-MiniLM-L6-v2 via sentence-transformers, 384-dimensional vectors |
+| Vector index | FAISS IndexFlatIP, cosine similarity search |
+| Dimensionality reduction | UMAP, projects down to 2D and 3D for visualisation |
+| Backend | FastAPI + Python, streaming pipeline via SSE, JWT auth via Supabase |
+| Frontend | React + Three.js, interactive 2D/3D point cloud renderer |
 
-## Setup
+---
 
-See step-by-step setup instructions below as the project develops.
+## Branches
 
-## Status
+### main
+The hosted version at embeddedcosine.com. Requires an account, has a 25 MB file size limit, and runs on a shared server.
 
-Work in progress — building step by step.
+### local
+A stripped down version made specifically to run on your own machine. No account, no file size limit, no rate limits. Everything runs on your CPU and is typically 4-10x faster than the hosted version depending on your specs.
+
+To use it:
+
+```bash
+git clone -b local https://github.com/mahiraskari/embeddedcosine.git
+cd embeddedcosine
+```
+
+Then follow the README in that branch for the full setup instructions.
+
+---
+
+## Support
+
+If you find it useful or just think it is cool, consider supporting it at [embeddedcosine.com/support](https://embeddedcosine.com/support).
