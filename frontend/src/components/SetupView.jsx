@@ -171,7 +171,6 @@ export default function SetupView({ onDone, onBack }) {
                         <p style={styles.hint}>
                             Upload a CSV or JSON file to get started.
                         </p>
-                        <p style={styles.limitNote}>25 MB file size limit.</p>
                         <div
                             style={styles.dropzone}
                             onClick={() => fileRef.current.click()}

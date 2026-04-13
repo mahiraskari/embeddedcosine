@@ -17,7 +17,6 @@ router = APIRouter(prefix="/dataset", tags=["dataset"])
 
 PROJECTS_DIR    = "data/projects"
 CONFIG_PATH     = "data/config.json"
-MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB hard limit
 
 
 def _sanitize_val(v):
@@ -78,14 +77,8 @@ async def upload_dataset(file: UploadFile = File(...), user_id: str = Depends(ge
             os.remove(old)
 
     save_path = f"{base}.{ext}"
-    written = 0
     with open(save_path, "wb") as f:
         while chunk := await file.read(65536):
-            written += len(chunk)
-            if written > MAX_UPLOAD_BYTES:
-                f.close()
-                os.remove(save_path)
-                raise HTTPException(status_code=413, detail="File too large (25 MB max)")
             f.write(chunk)
 
     df = _load_raw(save_path)

@@ -113,7 +113,26 @@ export default function AboutPage() {
                     ))}
                 </XPWindow>
 
-                <XPWindow title="readme.txt" initialPos={{ x: 540, y: 490 }} width={800} containerRef={canvasRef}>
+                <XPWindow title="run_locally.txt" initialPos={{ x: 100, y: 560 }} width={400} containerRef={canvasRef}>
+                    <p style={s.readmeText}>
+                        Want faster builds and no file size limit? Run it on your own machine.
+                        Speed depends on your CPU. Locally it can be 4–10x faster than the hosted version.
+                    </p>
+                    <p style={s.readmeText}>
+                        The link below points to an earlier commit, no account or Supabase setup needed,
+                        just clone and run.
+                    </p>
+                    <a
+                        href="https://github.com/mahiraskari/embeddedcosine/tree/15f7538"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#818cf8", fontSize: 12, textDecoration: "none", borderBottom: "1px solid rgba(129,140,248,0.3)" }}
+                    >
+                        github.com/mahiraskari/embeddedcosine →
+                    </a>
+                </XPWindow>
+
+                <XPWindow title="readme.txt" initialPos={{ x: 540, y: 450 }} width={800} containerRef={canvasRef}>
                     <p style={s.readmeText}>
                         embeddedcosine turns any structured dataset into a navigable semantic map.
                         Similar things cluster together. You search by meaning, not keywords.
@@ -204,7 +223,7 @@ const s = {
     canvas: {
         position: "relative",
         width: "100%",
-        height: 920,
+        height: 1020,
         padding: "32px 48px",
         boxSizing: "border-box",
         overflow: "hidden",
