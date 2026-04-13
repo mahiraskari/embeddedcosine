@@ -147,9 +147,9 @@ function ProjectCard({ project, onOpen, onDelete }) {
                         <button style={styles.confirmNo} onClick={() => setConfirmDelete(false)}>No</button>
                     </div>
                 ) : (
-                    <span style={styles.cardMeta}>
-                        {project.point_count ? `${project.point_count.toLocaleString()} points` : "building…"}
-                    </span>
+                    project.point_count > 0 && (
+                        <span style={styles.cardMeta}>{project.point_count.toLocaleString()} points</span>
+                    )
                 )}
             </div>
         </div>
