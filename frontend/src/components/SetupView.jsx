@@ -298,6 +298,18 @@ export default function SetupView({ onDone, onBack }) {
                 {onBack && !building && (
                     <button onClick={onBack} style={styles.backBtn}>← Back</button>
                 )}
+                {building && (
+                    <button
+                        onClick={() => {
+                            if (esRef.current) esRef.current.close();
+                            if (progressRef.current) clearInterval(progressRef.current);
+                            onBack?.();
+                        }}
+                        style={styles.backBtn}
+                    >
+                        ← Cancel
+                    </button>
+                )}
             </div>
         </div>
     );

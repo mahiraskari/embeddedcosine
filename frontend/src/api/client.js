@@ -68,7 +68,7 @@ export async function uploadDataset(file, onProgress) {
 }
 
 export async function configureDataset(name_col, embed_cols, project_name) {
-    const response = await api.post("/dataset/configure", { name_col, embed_cols, project_name });
+    const response = await api.post("/dataset/configure", { name_col, embed_cols, project_name }, { timeout: 60000 });
     return response.data;
 }
 

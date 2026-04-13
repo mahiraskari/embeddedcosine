@@ -147,9 +147,9 @@ function ProjectCard({ project, onOpen, onDelete }) {
                         <button style={styles.confirmNo} onClick={() => setConfirmDelete(false)}>No</button>
                     </div>
                 ) : (
-                    <span style={styles.cardMeta}>
-                        {project.point_count ? `${project.point_count.toLocaleString()} points` : "building…"}
-                    </span>
+                    project.point_count > 0 && (
+                        <span style={styles.cardMeta}>{project.point_count.toLocaleString()} points</span>
+                    )
                 )}
             </div>
         </div>
@@ -223,11 +223,6 @@ export default function ProjectsPage() {
                     <h1 style={styles.pageTitle}>Datasets</h1>
                     <p style={styles.pageSubtitle}>
                         Each dataset is mapped in semantic space.
-                        {projects.length > 0 && (
-                            <span style={{ color: projects.length >= 4 ? "#f87171" : "#2a2a3a", marginLeft: 8 }}>
-                                {projects.length} / 4
-                            </span>
-                        )}
                     </p>
                 </div>
 
@@ -235,7 +230,7 @@ export default function ProjectsPage() {
                     <div style={styles.empty}>Loading…</div>
                 ) : (
                     <div style={styles.grid}>
-                        {projects.length < 4 && <NewProjectCard onClick={() => setShowSetup(true)} />}
+                        <NewProjectCard onClick={() => setShowSetup(true)} />
                         {projects.map(p => (
                             <ProjectCard
                                 key={p.id}
