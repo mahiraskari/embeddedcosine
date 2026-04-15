@@ -57,7 +57,7 @@ body {
     height: 28px;
     border-radius: 3px;
     font-size: 12px;
-    width: 220px;
+    width: clamp(120px, 30vw, 220px);
     outline: none;
     transition: border-color 0.15s;
 }

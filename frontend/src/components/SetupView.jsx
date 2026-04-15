@@ -169,7 +169,7 @@ export default function SetupView({ onDone, onBack }) {
                 {step === 0 && (
                     <div style={styles.section}>
                         <p style={styles.hint}>
-                            Upload a CSV or JSON file to get started.
+                            Upload a CSV or JSON file to get started. Image, audio, and video URLs in columns are detected automatically.
                         </p>
                         <p style={styles.limitNote}>25 MB file size limit.</p>
                         <div
@@ -222,17 +222,29 @@ export default function SetupView({ onDone, onBack }) {
                             <label style={styles.label}>Columns to embed</label>
                             <p style={styles.fieldHint}>Select one or more columns. They will be combined into a single embedding.</p>
                             <div style={styles.checkboxList}>
-                                {uploadInfo.columns.map(c => (
-                                    <label key={c} style={styles.checkboxRow}>
-                                        <input
-                                            type="checkbox"
-                                            checked={embedCols.includes(c)}
-                                            onChange={() => toggleEmbedCol(c)}
-                                            style={styles.checkbox}
-                                        />
-                                        <span style={{ color: embedCols.includes(c) ? "#a5b4fc" : "#555", fontSize: 12 }}>{c}</span>
-                                    </label>
-                                ))}
+                                {uploadInfo.columns.map(c => {
+                                    const mediaType = uploadInfo.media_cols?.[c];
+                                    const isMedia = Boolean(mediaType);
+                                    return (
+                                        <label key={c} style={{
+                                            ...styles.checkboxRow,
+                                            opacity: isMedia ? 0.45 : 1,
+                                            cursor: isMedia ? "not-allowed" : "pointer",
+                                        }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={embedCols.includes(c)}
+                                                onChange={() => !isMedia && toggleEmbedCol(c)}
+                                                disabled={isMedia}
+                                                style={{ ...styles.checkbox, cursor: isMedia ? "not-allowed" : "pointer" }}
+                                            />
+                                            <span style={{ color: embedCols.includes(c) ? "#a5b4fc" : "#555", fontSize: 12, flex: 1 }}>{c}</span>
+                                            {isMedia && (
+                                                <span style={styles.mediaBadge}>{mediaType}</span>
+                                            )}
+                                        </label>
+                                    );
+                                })}
                             </div>
                         </div>
 
@@ -430,6 +442,18 @@ const styles = {
         width: 13,
         height: 13,
         cursor: "pointer",
+    },
+    mediaBadge: {
+        fontSize: 9,
+        fontWeight: 700,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        color: "#3a3a5a",
+        background: "#111120",
+        border: "1px solid #222",
+        borderRadius: 2,
+        padding: "1px 5px",
+        flexShrink: 0,
     },
     previewBox: {
         background: "#08080f",

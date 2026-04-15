@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Navbar from "../components/Navbar";
 
 const TIP_URL = "https://github.com/sponsors/mahiraskari";
@@ -10,15 +10,24 @@ const TOWARD = [
     ["New features",  "Better search, more dataset formats, improved visualisations."],
 ];
 
-function XPWindow({ title, children, initialPos, width, containerRef }) {
-    const [pos, setPos] = useState(initialPos || { x: 0, y: 0 });
+function XPWindow({ title, children, initialFrac, widthFrac, containerRef, isMobile }) {
+    const [dragPos, setDragPos] = useState(null);
     const [dragging, setDragging] = useState(false);
+    const [closed, setClosed] = useState(false);
+    const [maximized, setMaximized] = useState(false);
     const selfRef = useRef(null);
 
+    if (closed) return null;
+
     const onTitleMouseDown = (e) => {
+        if (maximized || isMobile) return;
         e.preventDefault();
-        const ox = pos.x, oy = pos.y;
+        const selfRect = selfRef.current.getBoundingClientRect();
+        const contRect = containerRef.current.getBoundingClientRect();
+        const ox = selfRect.left - contRect.left;
+        const oy = selfRect.top  - contRect.top;
         const mx = e.clientX, my = e.clientY;
+        setDragPos({ x: ox, y: oy });
         setDragging(true);
 
         const onMove = (ev) => {
@@ -32,7 +41,7 @@ function XPWindow({ title, children, initialPos, width, containerRef }) {
                 newX = Math.max(0, Math.min(newX, cw - sw));
                 newY = Math.max(0, Math.min(newY, ch - sh));
             }
-            setPos({ x: newX, y: newY });
+            setDragPos({ x: newX, y: newY });
         };
         const onUp = () => {
             setDragging(false);
@@ -43,47 +52,74 @@ function XPWindow({ title, children, initialPos, width, containerRef }) {
         window.addEventListener("mouseup", onUp);
     };
 
+    const posStyle = isMobile
+        ? { position: "relative", left: 0, top: 0, width: "100%" }
+        : maximized
+            ? { left: 0, top: 0, width: "100%", height: "100%" }
+            : dragPos
+                ? { left: dragPos.x, top: dragPos.y, width: `${(widthFrac || 0.42) * 100}%` }
+                : { left: `${initialFrac.x * 100}%`, top: `${initialFrac.y * 100}%`, width: `${(widthFrac || 0.42) * 100}%` };
+
     return (
         <div ref={selfRef} style={{
             ...xp.window,
-            position: "absolute",
-            left: pos.x,
-            top: pos.y,
-            width: width || "auto",
+            position: isMobile ? "relative" : "absolute",
+            ...posStyle,
+            display: "flex",
+            flexDirection: "column",
             cursor: dragging ? "grabbing" : "default",
             userSelect: dragging ? "none" : "auto",
-            zIndex: dragging ? 100 : 1,
+            zIndex: dragging ? 100 : maximized ? 50 : 1,
         }}>
-            <div style={{ ...xp.titleBar, cursor: "grab" }} onMouseDown={onTitleMouseDown}>
+            <div style={{ ...xp.titleBar, cursor: maximized ? "default" : "grab" }} onMouseDown={onTitleMouseDown}>
                 <span style={xp.titleText}>{title}</span>
                 <div style={xp.titleBtns}>
                     <span style={xp.titleBtn}>—</span>
-                    <span style={xp.titleBtn}>□</span>
-                    <span style={{ ...xp.titleBtn, background: "linear-gradient(180deg, #e8504a 0%, #b52020 100%)" }}>✕</span>
+                    <span
+                        style={{ ...xp.titleBtn, cursor: "pointer" }}
+                        onMouseDown={e => e.stopPropagation()}
+                        onClick={() => setMaximized(m => !m)}
+                    >□</span>
+                    <span
+                        style={{ ...xp.titleBtn, cursor: "pointer", background: "linear-gradient(180deg, #e8504a 0%, #b52020 100%)" }}
+                        onMouseDown={e => e.stopPropagation()}
+                        onClick={() => setClosed(true)}
+                    >✕</span>
                 </div>
             </div>
-            <div style={xp.windowBody}>{children}</div>
+            <div style={{ ...xp.windowBody, ...(maximized ? { flex: 1, overflowY: "auto" } : {}) }}>{children}</div>
         </div>
     );
 }
 
 export default function SupportPage() {
     const canvasRef = useRef(null);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handler = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener("resize", handler);
+        return () => window.removeEventListener("resize", handler);
+    }, []);
+
+    const canvasStyle = isMobile
+        ? { display: "flex", flexDirection: "column", gap: 16, padding: "16px", boxSizing: "border-box", width: "100%" }
+        : s.canvas;
 
     return (
         <div style={s.page}>
             <Navbar />
 
-            <div ref={canvasRef} style={s.canvas}>
+            <div ref={canvasRef} style={canvasStyle}>
 
-                <XPWindow title="keep_it_running.txt" initialPos={{ x: 240, y: 100 }} width={620} containerRef={canvasRef}>
+                <XPWindow title="keep_it_running.txt" initialFrac={{ x: 0.14, y: 0.10 }} widthFrac={0.37} containerRef={canvasRef} isMobile={isMobile}>
                     <p style={s.heroSub}>
                         embeddedcosine is free to use. If you find it useful or just think it's cool,
                         leaving a tip helps keep the servers running and the project improving.
                     </p>
                 </XPWindow>
 
-                <XPWindow title="tip.exe" initialPos={{ x: 760, y: 200 }} width={640} containerRef={canvasRef}>
+                <XPWindow title="tip.exe" initialFrac={{ x: 0.45, y: 0.31 }} widthFrac={0.39} containerRef={canvasRef} isMobile={isMobile}>
                     <div style={s.tipInner}>
                         <p style={s.tipText}>
                             Everything here runs on real servers, real compute, and real time.
@@ -101,7 +137,7 @@ export default function SupportPage() {
                     </div>
                 </XPWindow>
 
-                <XPWindow title="breakdown_of_costs" initialPos={{ x: 400, y: 400 }} width={700} containerRef={canvasRef}>
+                <XPWindow title="breakdown_of_costs" initialFrac={{ x: 0.21, y: 0.63 }} widthFrac={0.43} containerRef={canvasRef} isMobile={isMobile}>
                     {TOWARD.map(([title, desc], i) => (
                         <div key={title} style={{
                             ...s.row,
@@ -208,6 +244,7 @@ const s = {
         position: "relative",
         width: "100%",
         flex: 1,
+        minHeight: "calc(100vh - 120px)",
         padding: "32px 48px",
         boxSizing: "border-box",
         overflow: "hidden",

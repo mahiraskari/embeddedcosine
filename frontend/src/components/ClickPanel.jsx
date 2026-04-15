@@ -3,6 +3,36 @@ import { computeSimilarity } from "../api/client";
 
 const SKIP_KEYS = new Set(["x", "y", "z", "score"]);
 
+// Detect media URLs by checking the scheme and file extension before any query string
+const IMAGE_RE = /^https?:\/\/.+\.(png|jpg|jpeg|gif|webp|svg)(\?.*)?$/i;
+
+function MediaValue({ val }) {
+    const str = String(val).trim();
+    if (IMAGE_RE.test(str)) {
+        return (
+            <img
+                src={str}
+                alt=""
+                style={{
+                    maxWidth: "100%",
+                    maxHeight: 180,
+                    borderRadius: 2,
+                    objectFit: "contain",
+                    display: "block",
+                    marginTop: 4,
+                    background: "#08080f",
+                }}
+                loading="lazy"
+            />
+        );
+    }
+    return (
+        <span style={{ fontSize: 11, color: "#a0a0c0", lineHeight: 1.5, flex: 1, wordBreak: "break-word", cursor: "text" }}>
+            {str.length > 400 ? str.slice(0, 400) + "…" : str}
+        </span>
+    );
+}
+
 function MetaRows({ point, embedCols = [] }) {
     const embedSet = new Set(embedCols);
     // x/y/z/score are rendering artefacts — not useful to show in the details panel
@@ -26,9 +56,7 @@ function MetaRows({ point, embedCols = [] }) {
                         <span style={{ ...s.val, color: isEmbed ? "#c4c4f0" : "#a0a0c0" }}>
                             {v == null
                                 ? <span style={{ color: "#333" }}>—</span>
-                                : String(v).length > 400
-                                    ? String(v).slice(0, 400) + "…"
-                                    : String(v)}
+                                : <MediaValue val={v} />}
                         </span>
                     </div>
                 );

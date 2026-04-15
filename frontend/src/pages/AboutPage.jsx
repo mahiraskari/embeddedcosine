@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
@@ -11,22 +11,31 @@ const STACK = [
 ];
 
 const STEPS = [
-    ["01", "Upload",         <>Drop a CSV or JSON. The backend reads the file with pandas and returns a cleaned and tidied column list. <a href="https://kaggle.com" target="_blank" rel="noopener noreferrer" style={{ color: "#818cf8", textDecoration: "none" }}>Kaggle</a> is a good place to find datasets on any topic, and what I used for testing.</> ],
+    ["01", "Upload",         <>Drop a CSV or JSON. The backend reads the file with pandas and returns a cleaned and tidied column list. <a href="https://kaggle.com" target="_blank" rel="noopener noreferrer" style={{ color: "#818cf8", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>Kaggle</a> is a good place to find datasets on any topic, and what I used for testing.</> ],
     ["02", "Configure",      "Pick a display-name column and one or more columns to embed. They get joined into a single string per row."],
     ["03", "Embed",          "The AI model reads each row and embeds it into a vector of numbers that captures its meaning.", "embedded"],
     ["04", "Index + reduce", "FAISS builds a cosine-similarity index. UMAP projects the vectors into 2D and 3D space.", "cosine"],
     ["05", "Explore",        "Pan, zoom, fly through the point cloud. Search by concept. Click any point for details."],
 ];
 
-function XPWindow({ title, children, initialPos, width, containerRef }) {
-    const [pos, setPos] = useState(initialPos || { x: 0, y: 0 });
+function XPWindow({ title, children, initialFrac, widthFrac, containerRef, isMobile }) {
+    const [dragPos, setDragPos] = useState(null);
     const [dragging, setDragging] = useState(false);
+    const [closed, setClosed] = useState(false);
+    const [maximized, setMaximized] = useState(false);
     const selfRef = useRef(null);
 
+    if (closed) return null;
+
     const onTitleMouseDown = (e) => {
+        if (maximized || isMobile) return;
         e.preventDefault();
-        const ox = pos.x, oy = pos.y;
+        const selfRect = selfRef.current.getBoundingClientRect();
+        const contRect = containerRef.current.getBoundingClientRect();
+        const ox = selfRect.left - contRect.left;
+        const oy = selfRect.top  - contRect.top;
         const mx = e.clientX, my = e.clientY;
+        setDragPos({ x: ox, y: oy });
         setDragging(true);
 
         const onMove = (ev) => {
@@ -40,7 +49,7 @@ function XPWindow({ title, children, initialPos, width, containerRef }) {
                 newX = Math.max(0, Math.min(newX, cw - sw));
                 newY = Math.max(0, Math.min(newY, ch - sh));
             }
-            setPos({ x: newX, y: newY });
+            setDragPos({ x: newX, y: newY });
         };
         const onUp = () => {
             setDragging(false);
@@ -51,26 +60,42 @@ function XPWindow({ title, children, initialPos, width, containerRef }) {
         window.addEventListener("mouseup", onUp);
     };
 
+    const posStyle = isMobile
+        ? { position: "relative", left: 0, top: 0, width: "100%" }
+        : maximized
+            ? { left: 0, top: 0, width: "100%", height: "100%" }
+            : dragPos
+                ? { left: dragPos.x, top: dragPos.y, width: `${(widthFrac || 0.45) * 100}%` }
+                : { left: `${initialFrac.x * 100}%`, top: `${initialFrac.y * 100}%`, width: `${(widthFrac || 0.45) * 100}%` };
+
     return (
         <div ref={selfRef} style={{
             ...xp.window,
-            position: "absolute",
-            left: pos.x,
-            top: pos.y,
-            width: width || "auto",
+            position: isMobile ? "relative" : "absolute",
+            ...posStyle,
+            display: "flex",
+            flexDirection: "column",
             cursor: dragging ? "grabbing" : "default",
             userSelect: dragging ? "none" : "auto",
-            zIndex: dragging ? 100 : 1,
+            zIndex: dragging ? 100 : maximized ? 50 : 1,
         }}>
-            <div style={{ ...xp.titleBar, cursor: "grab" }} onMouseDown={onTitleMouseDown}>
+            <div style={{ ...xp.titleBar, cursor: maximized ? "default" : "grab" }} onMouseDown={onTitleMouseDown}>
                 <span style={xp.titleText}>{title}</span>
                 <div style={xp.titleBtns}>
                     <span style={xp.titleBtn}>—</span>
-                    <span style={xp.titleBtn}>□</span>
-                    <span style={{ ...xp.titleBtn, background: "linear-gradient(180deg, #e8504a 0%, #b52020 100%)" }}>✕</span>
+                    <span
+                        style={{ ...xp.titleBtn, cursor: "pointer" }}
+                        onMouseDown={e => e.stopPropagation()}
+                        onClick={() => setMaximized(m => !m)}
+                    >□</span>
+                    <span
+                        style={{ ...xp.titleBtn, cursor: "pointer", background: "linear-gradient(180deg, #e8504a 0%, #b52020 100%)" }}
+                        onMouseDown={e => e.stopPropagation()}
+                        onClick={() => setClosed(true)}
+                    >✕</span>
                 </div>
             </div>
-            <div style={xp.windowBody}>{children}</div>
+            <div style={{ ...xp.windowBody, ...(maximized ? { flex: 1, overflowY: "auto" } : {}) }}>{children}</div>
         </div>
     );
 }
@@ -78,14 +103,25 @@ function XPWindow({ title, children, initialPos, width, containerRef }) {
 export default function AboutPage() {
     const navigate = useNavigate();
     const canvasRef = useRef(null);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handler = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener("resize", handler);
+        return () => window.removeEventListener("resize", handler);
+    }, []);
+
+    const canvasStyle = isMobile
+        ? { display: "flex", flexDirection: "column", gap: 16, padding: "16px", boxSizing: "border-box", width: "100%" }
+        : s.canvas;
 
     return (
         <div style={s.page}>
             <Navbar />
 
-            <div ref={canvasRef} style={s.canvas}>
+            <div ref={canvasRef} style={canvasStyle}>
 
-                <XPWindow title="how_it_works.exe" initialPos={{ x: 100, y: 40 }} width={680} containerRef={canvasRef}>
+                <XPWindow title="how_it_works.exe" initialFrac={{ x: 0.03, y: 0.02 }} widthFrac={0.46} containerRef={canvasRef} isMobile={isMobile}>
                     <div style={s.stepsGrid}>
                         {STEPS.map(([n, title, desc, tag]) => (
                             <div key={n} style={s.stepCard}>
@@ -101,7 +137,7 @@ export default function AboutPage() {
                     </p>
                 </XPWindow>
 
-                <XPWindow title="tech_stack.txt" initialPos={{ x: 750, y: 120 }} width={760} containerRef={canvasRef}>
+                <XPWindow title="tech_stack.txt" initialFrac={{ x: 0.48, y: 0.12 }} widthFrac={0.50} containerRef={canvasRef} isMobile={isMobile}>
                     {STACK.map(({ label, value }, i) => (
                         <div key={label} style={{
                             ...s.stackRow,
@@ -113,7 +149,7 @@ export default function AboutPage() {
                     ))}
                 </XPWindow>
 
-                <XPWindow title="run_locally.txt" initialPos={{ x: 280, y: 562 }} width={400} containerRef={canvasRef}>
+                <XPWindow title="run_locally.txt" initialFrac={{ x: 0.09, y: 0.58 }} widthFrac={0.28} containerRef={canvasRef} isMobile={isMobile}>
                     <p style={s.readmeText}>
                         There is a local branch of this project made specifically to run it on your
                         own machine without any of the account setup, server limits, or extra configuration.
@@ -126,31 +162,40 @@ export default function AboutPage() {
                         href="https://github.com/mahiraskari/embeddedcosine/tree/local"
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ color: "#818cf8", fontSize: 12, textDecoration: "none", borderBottom: "1px solid rgba(129,140,248,0.3)" }}
+                        style={{ color: "#818cf8", fontSize: 14, fontFamily: "monospace", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
                     >
-                        github.com/mahiraskari/embeddedcosine/tree/local →
+                        github.com/mahiraskari/embeddedcosine/tree/local
                     </a>
                 </XPWindow>
 
-                <XPWindow title="readme.txt" initialPos={{ x: 730, y: 510 }} width={800} containerRef={canvasRef}>
+                <XPWindow title="readme.txt" initialFrac={{ x: 0.42, y: 0.56 }} widthFrac={0.55} containerRef={canvasRef} isMobile={isMobile}>
                     <p style={s.readmeText}>
                         embeddedcosine turns any structured dataset into a navigable semantic map.
                         Similar things cluster together. You search by meaning, not keywords.
                         Built by one person, for anyone curious about their data.
                     </p>
                     <p style={s.readmeText}>
-                        embeddedcosine is a personal project, a way to view vector databases
-                        in 2D and 3D dimensional planes. Built because I wanted to actually
-                        see what embedding models do to data, and thought others might too.
+                        It started as a personal project to actually see what embedding models do to data.
+                        I wanted to watch ideas group together in space, and thought others might find that interesting too.
                     </p>
                     <p style={s.readmeText}>
-                        It's free to use. If you find it useful or just think it's cool,{" "}
+                        It's completely free to use and{" "}
+                        <a
+                            href="https://github.com/mahiraskari/embeddedcosine"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: "#818cf8", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+                        >
+                            open source on GitHub
+                        </a>
+                        . Fork it, edit it, do whatever you want with it. If you build something cool with it or just want to say thanks,{" "}
                         <span
                             style={{ color: "#818cf8", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
                             onClick={() => navigate("/support")}
                         >
-                            consider supporting it
-                        </span>.
+                            supporting it
+                        </span>
+                        {" "}goes a long way.
                     </p>
                 </XPWindow>
 
@@ -217,13 +262,15 @@ const s = {
         background: "#05050a",
         color: "#e2e2e2",
         fontFamily: '"Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
     },
     canvas: {
         position: "relative",
         width: "100%",
-        height: 1020,
+        minHeight: "calc(100vh - 120px)",
+        flex: 1,
         padding: "32px 48px",
         boxSizing: "border-box",
         overflow: "hidden",

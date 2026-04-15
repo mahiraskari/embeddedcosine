@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import math
 import uuid
@@ -15,9 +16,37 @@ from auth import get_user_id, get_user_id_from_token_param
 
 router = APIRouter(prefix="/dataset", tags=["dataset"])
 
-PROJECTS_DIR    = "data/projects"
-CONFIG_PATH     = "data/config.json"
+PROJECTS_DIR     = "data/projects"
+CONFIG_PATH      = "data/config.json"
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB hard limit
+
+# Regex to detect media URLs — anchored before an optional query string
+_IMAGE_RE = re.compile(r'https?://.+\.(png|jpg|jpeg|gif|webp|svg)(\?.*)?$', re.IGNORECASE)
+_AUDIO_RE = re.compile(r'https?://.+\.(mp3|wav|ogg|m4a|flac)(\?.*)?$', re.IGNORECASE)
+_VIDEO_RE = re.compile(r'https?://.+\.(mp4|webm|mov|avi|mkv)(\?.*)?$', re.IGNORECASE)
+
+
+def _detect_media_cols(df: pd.DataFrame) -> dict:
+    """Return {col: 'image'|'audio'|'video'} for columns whose values look like media URLs."""
+    media = {}
+    for col in df.columns:
+        sample = df[col].dropna().head(20).astype(str).tolist()
+        hits = {"image": 0, "audio": 0, "video": 0}
+        for val in sample:
+            val = val.strip()
+            if _IMAGE_RE.match(val):
+                hits["image"] += 1
+            elif _AUDIO_RE.match(val):
+                hits["audio"] += 1
+            elif _VIDEO_RE.match(val):
+                hits["video"] += 1
+        # Call it a media column if at least half the sampled values match
+        threshold = max(1, len(sample) // 2)
+        for kind, count in hits.items():
+            if count >= threshold:
+                media[col] = kind
+                break
+    return media
 
 
 def _sanitize_val(v):
@@ -89,12 +118,14 @@ async def upload_dataset(file: UploadFile = File(...), user_id: str = Depends(ge
             f.write(chunk)
 
     df = _load_raw(save_path)
+    media_cols = _detect_media_cols(df)
 
     return {
         "filename": file.filename,
         "total_rows": len(df),
         "columns": [str(c) for c in df.columns],
         "preview": df.head(5).fillna("").to_dict(orient="records"),
+        "media_cols": media_cols,
     }
 
 

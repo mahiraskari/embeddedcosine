@@ -3,7 +3,18 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabase";
 import AccountMenu from "./AccountMenu";
 
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+    useEffect(() => {
+        const h = () => setIsMobile(window.innerWidth < 640);
+        window.addEventListener("resize", h);
+        return () => window.removeEventListener("resize", h);
+    }, []);
+    return isMobile;
+};
+
 const LINKS = [
+    { label: "Preview", path: "/" },
     { label: "About",   path: "/about" },
     { label: "Support", path: "/support" },
 ];
@@ -12,6 +23,8 @@ export default function Navbar() {
     const navigate = useNavigate();
     const location = useLocation();
     const [session, setSession] = useState(undefined);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const isMobile = useIsMobile();
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
@@ -19,25 +32,52 @@ export default function Navbar() {
         return () => subscription.unsubscribe();
     }, []);
 
-    return (
-        <nav style={s.nav}>
-            <span style={s.logo} onClick={() => navigate("/")}>embeddedcosine</span>
+    // Close menu when navigating
+    const go = (path) => { navigate(path); setMenuOpen(false); };
 
-            <div style={s.right}>
-                <button style={activeStyle(s.preview, location.pathname === "/")} onClick={() => navigate("/")}>Preview</button>
-                {LINKS.map(({ label, path }) => (
-                    <button key={label} style={activeStyle(s.link, location.pathname === path)} onClick={() => navigate(path)}>
-                        {label}
+    return (
+        <div style={s.navWrapper}>
+            <nav style={s.nav}>
+                <span style={s.logo} onClick={() => navigate("/")}>embeddedcosine</span>
+
+                <div style={s.right}>
+                    {!isMobile && <button style={s.refresh} onClick={() => window.location.reload()} title="Refresh">↻</button>}
+                    {!isMobile && LINKS.map(({ label, path }) => (
+                        <button key={label} style={activeStyle(s.link, location.pathname === path)} onClick={() => navigate(path)}>
+                            {label}
+                        </button>
+                    ))}
+                    {session !== undefined && (
+                        <button style={s.cta} onClick={() => navigate("/datasets")}>
+                            {session ? "My datasets" : "Try it out →"}
+                        </button>
+                    )}
+                    {session && <AccountMenu session={session} />}
+                    {isMobile && (
+                        <button style={s.hamburger} onClick={() => setMenuOpen(o => !o)}>
+                            {menuOpen ? "✕" : "☰"}
+                        </button>
+                    )}
+                </div>
+            </nav>
+
+            {isMobile && menuOpen && (
+                <div style={s.dropdown}>
+                    {LINKS.map(({ label, path }) => (
+                        <button
+                            key={label}
+                            style={{ ...s.dropdownItem, color: location.pathname === path ? "#fff" : "#555" }}
+                            onClick={() => go(path)}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                    <button style={s.dropdownItem} onClick={() => { window.location.reload(); setMenuOpen(false); }}>
+                        ↻ Refresh
                     </button>
-                ))}
-                {session !== undefined && (
-                    <button style={s.cta} onClick={() => navigate("/datasets")}>
-                        {session ? "My datasets" : "Try it out →"}
-                    </button>
-                )}
-                {session && <AccountMenu session={session} />}
-            </div>
-        </nav>
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -46,6 +86,12 @@ const activeStyle = (base, isActive) => isActive
     : base;
 
 const s = {
+    navWrapper: {
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+        fontFamily: '"Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    },
     nav: {
         display: "flex",
         alignItems: "center",
@@ -53,10 +99,6 @@ const s = {
         borderBottom: "1px solid #111",
         background: "rgba(5,5,10,0.95)",
         backdropFilter: "blur(12px)",
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-        fontFamily: '"Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     },
     logo: {
         fontSize: 15,
@@ -71,7 +113,7 @@ const s = {
         alignItems: "center",
         gap: 8,
     },
-    preview: {
+    link: {
         background: "none",
         border: "1px solid #1e1e2e",
         color: "#555",
@@ -82,15 +124,16 @@ const s = {
         fontFamily: "inherit",
         transition: "all 0.15s",
     },
-    link: {
+    refresh: {
         background: "none",
         border: "1px solid #1e1e2e",
-        color: "#555",
-        padding: "7px 14px",
+        color: "#818cf8",
+        padding: "5px 10px",
         borderRadius: 3,
-        fontSize: 13,
+        fontSize: 15,
         cursor: "pointer",
         fontFamily: "inherit",
+        lineHeight: 1,
         transition: "all 0.15s",
     },
     cta: {
@@ -104,5 +147,35 @@ const s = {
         cursor: "pointer",
         fontFamily: "inherit",
         letterSpacing: "-0.2px",
+    },
+    hamburger: {
+        background: "none",
+        border: "1px solid #1e1e2e",
+        color: "#555",
+        padding: "5px 10px",
+        borderRadius: 3,
+        fontSize: 15,
+        cursor: "pointer",
+        fontFamily: "inherit",
+        lineHeight: 1,
+    },
+    dropdown: {
+        background: "rgba(5,5,10,0.98)",
+        borderBottom: "1px solid #1e1e2e",
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        backdropFilter: "blur(12px)",
+    },
+    dropdownItem: {
+        background: "none",
+        border: "none",
+        borderBottom: "1px solid #111",
+        color: "#555",
+        padding: "16px 28px",
+        fontSize: 14,
+        cursor: "pointer",
+        fontFamily: "inherit",
+        textAlign: "left",
     },
 };

@@ -799,3 +799,23 @@
     padding: 20px 48px;
     border-top: 1px solid rgba(255,255,255,0.03);
 }
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .hero { padding: 60px 20px 50px; }
+    .section { padding: 50px 20px; }
+    .cta-section { padding: 60px 20px; }
+    .landing-footer { padding: 16px 20px; }
+
+    .demo-row { grid-template-columns: 1fr; }
+    .features-grid { grid-template-columns: 1fr; }
+    .steps-row { grid-template-columns: 1fr; }
+
+    .live-demo-map { height: 300px; }
+    .live-demo-bar-title { display: none; }
+    .live-demo-voronoi { display: none; }
+    .live-demo-search-input { width: 90px; }
+    .live-demo-footer { flex-direction: column; gap: 10px; align-items: flex-start; }
+
+    .section-wide { padding: 50px 16px; }
+}

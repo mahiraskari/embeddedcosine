@@ -341,7 +341,7 @@ function LiveDemo({ navigate }) {
             {/* Footer bar */}
             <div className="live-demo-footer">
                 <span style={{ color: "#4a4a5a", fontSize: 11, fontFamily: "monospace" }}>
-                    {points2d ? `${points2d.length.toLocaleString()} drugs · the closer two points, the more similar their side effects` : ""}
+                    {points2d ? `${points2d.length.toLocaleString()} drugs` : ""}
                 </span>
                 <button className="btn-primary" style={{ fontSize: 12, padding: "6px 14px" }}
                     onClick={() => navigate("/map?demo=true")}>
@@ -381,8 +381,15 @@ export default function LandingPage() {
 
             {/* Demo */}
             <section className="section section-wide" id="demo">
-                <div className="section-label">Interactive preview</div>
-                <h2 className="section-title">2,900+ drugs, clustered by side effects in embedding space</h2>
+                <p style={{ fontSize: 13, color: "#666", fontFamily: "monospace", marginBottom: 20, lineHeight: 1.7 }}>
+                    each point is a drug · the closer two points, the more similar their side effects · the map is built by comparing side effects across every drug · search a side effect to see which drugs match it most closely ·{" "}
+                    <span
+                        style={{ color: "#818cf8", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+                        onClick={() => navigate("/about")}
+                    >
+                        learn more on the about page
+                    </span>
+                </p>
                 <LiveDemo navigate={navigate} />
             </section>
 
