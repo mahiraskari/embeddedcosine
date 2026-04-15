@@ -118,12 +118,22 @@ async def upload_dataset(file: UploadFile = File(...), user_id: str = Depends(ge
             f.write(chunk)
 
     if save_path.endswith(".csv"):
-        preview_df = pd.read_csv(save_path, nrows=5, on_bad_lines="skip", encoding="utf-8-sig")
-        with open(save_path, "r", encoding="utf-8-sig", errors="replace") as fh:
-            total_rows = sum(1 for _ in fh) - 1
+        # Try UTF-8 first, fall back to latin-1 which accepts any byte sequence
+        for enc in ("utf-8-sig", "latin-1"):
+            try:
+                preview_df = pd.read_csv(save_path, nrows=5, on_bad_lines="skip", encoding=enc)
+                count_df   = pd.read_csv(save_path, on_bad_lines="skip", encoding=enc)
+                break
+            except UnicodeDecodeError:
+                continue
+        else:
+            raise HTTPException(status_code=400, detail="Could not decode file — try saving it as UTF-8")
+
+        total_rows = len(count_df)
     else:
         preview_df = _load_raw(save_path)
         total_rows = len(preview_df)
+
     preview_df.columns = [str(c) for c in preview_df.columns]
     media_cols = _detect_media_cols(preview_df)
 
