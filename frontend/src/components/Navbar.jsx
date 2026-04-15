@@ -49,7 +49,7 @@ export default function Navbar() {
                     ))}
                     {session !== undefined && (
                         <button style={s.cta} onClick={() => navigate("/datasets")}>
-                            {session ? "My datasets" : "Try it out →"}
+                            {session ? "My datasets" : "Try it out"}
                         </button>
                     )}
                     {session && <AccountMenu session={session} />}
