@@ -3,12 +3,13 @@ import { computeSimilarity } from "../api/client";
 
 const SKIP_KEYS = new Set(["x", "y", "z", "score"]);
 
-// Detect media URLs by checking the scheme and file extension before any query string
+// Detect media URLs — either by file extension or known image CDN hostnames
 const IMAGE_RE = /^https?:\/\/.+\.(png|jpg|jpeg|gif|webp|svg)(\?.*)?$/i;
+const IMAGE_HOST_RE = /^https?:\/\/(lh\d+\.googleusercontent\.com|encrypted-tbn\d+\.gstatic\.com|[\w.-]+\.gstatic\.com)\//i;
 
 function MediaValue({ val }) {
     const str = String(val).trim();
-    if (IMAGE_RE.test(str)) {
+    if (IMAGE_RE.test(str) || IMAGE_HOST_RE.test(str)) {
         return (
             <img
                 src={str}
@@ -23,6 +24,12 @@ function MediaValue({ val }) {
                     background: "#08080f",
                 }}
                 loading="lazy"
+                onError={e => {
+                    e.target.replaceWith(Object.assign(document.createElement("span"), {
+                        textContent: str.length > 400 ? str.slice(0, 400) + "…" : str,
+                        style: "font-size:11px;color:#a0a0c0;line-height:1.5;word-break:break-word",
+                    }));
+                }}
             />
         );
     }

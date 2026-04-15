@@ -47,7 +47,7 @@ export default function AccountMenu({ session }) {
                 }}
             >
                 {avatarUrl
-                    ? <img src={avatarUrl} alt={displayName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ? <img src={avatarUrl} alt={displayName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.style.display = "none"; }} />
                     : displayName[0]?.toUpperCase()
                 }
             </div>
@@ -59,7 +59,7 @@ export default function AccountMenu({ session }) {
                     <div style={s.header}>
                         <div style={s.avatarLarge}>
                             {avatarUrl
-                                ? <img src={avatarUrl} alt={displayName} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+                                ? <img src={avatarUrl} alt={displayName} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} onError={e => { e.target.style.display = "none"; }} />
                                 : <span style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{displayName[0]?.toUpperCase()}</span>
                             }
                         </div>

@@ -41,7 +41,7 @@ export default function Navbar() {
                 <span style={s.logo} onClick={() => navigate("/")}>embeddedcosine</span>
 
                 <div style={s.right}>
-                    {!isMobile && <button style={s.refresh} onClick={() => window.location.reload()} title="Refresh">↻</button>}
+                    {!isMobile && <button style={s.refresh} onClick={() => window.location.reload()} title="Refresh" onMouseEnter={e => e.currentTarget.style.color = "#a5b4fc"} onMouseLeave={e => e.currentTarget.style.color = "#6366f1"}>↻</button>}
                     {!isMobile && LINKS.map(({ label, path }) => (
                         <button key={label} style={activeStyle(s.link, location.pathname === path)} onClick={() => navigate(path)}>
                             {label}
@@ -126,15 +126,15 @@ const s = {
     },
     refresh: {
         background: "none",
-        border: "1px solid #1e1e2e",
-        color: "#818cf8",
-        padding: "5px 10px",
+        border: "none",
+        color: "#6366f1",
+        padding: "5px 8px",
         borderRadius: 3,
-        fontSize: 15,
+        fontSize: 20,
         cursor: "pointer",
         fontFamily: "inherit",
         lineHeight: 1,
-        transition: "all 0.15s",
+        transition: "color 0.15s",
     },
     cta: {
         background: "#fff",

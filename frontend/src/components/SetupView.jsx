@@ -38,6 +38,11 @@ export default function SetupView({ onDone, onBack }) {
         const file = e.target.files[0];
         if (!file) return;
         setError(null);
+        if (file.size > 25 * 1024 * 1024) {
+            setError("File exceeds the 25 MB limit. Try a smaller dataset or trim unused columns first.");
+            e.target.value = "";
+            return;
+        }
         setUploading(true);
         setUploadProgress(0);
         try {

@@ -11,13 +11,14 @@ def reduce(n_components: int, data_dir: str = "data") -> np.ndarray:
 
     # UMAP projects high-dimensional embeddings down to 2D or 3D for visualisation.
     # n_neighbors controls how local vs global the structure is — 25 is a good middle ground.
-    # min_dist controls how tightly clusters pack — lower = tighter clusters, position tracks similarity better.
+    # min_dist / spread together determine how tightly clusters pack together.
     # cosine metric matches the similarity measure used in the FAISS index.
     # random_state=42 makes layouts reproducible across rebuilds.
     reducer = umap.UMAP(
         n_components=n_components,
         n_neighbors=25,
-        min_dist=0.05,
+        min_dist=0.4,
+        spread=1.5,
         metric="cosine",
         random_state=42,
     )

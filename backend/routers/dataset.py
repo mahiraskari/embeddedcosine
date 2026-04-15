@@ -117,14 +117,21 @@ async def upload_dataset(file: UploadFile = File(...), user_id: str = Depends(ge
                 raise HTTPException(status_code=413, detail="File too large (25 MB max)")
             f.write(chunk)
 
-    df = _load_raw(save_path)
-    media_cols = _detect_media_cols(df)
+    if save_path.endswith(".csv"):
+        preview_df = pd.read_csv(save_path, nrows=5, on_bad_lines="skip", encoding="utf-8-sig")
+        with open(save_path, "r", encoding="utf-8-sig", errors="replace") as fh:
+            total_rows = sum(1 for _ in fh) - 1
+    else:
+        preview_df = _load_raw(save_path)
+        total_rows = len(preview_df)
+    preview_df.columns = [str(c) for c in preview_df.columns]
+    media_cols = _detect_media_cols(preview_df)
 
     return {
         "filename": file.filename,
-        "total_rows": len(df),
-        "columns": [str(c) for c in df.columns],
-        "preview": df.head(5).fillna("").to_dict(orient="records"),
+        "total_rows": max(total_rows, 0),
+        "columns": [str(c) for c in preview_df.columns],
+        "preview": preview_df.head(5).fillna("").to_dict(orient="records"),
         "media_cols": media_cols,
     }
 
