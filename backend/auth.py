@@ -43,9 +43,9 @@ def _decode(token: str) -> str | None:
         kid    = header.get("kid")
 
         keys = _get_jwks()
-        key = next((k for k in keys if k.get("kid") == kid), keys[0] if keys else None)
+        key = next((k for k in keys if k.get("kid") == kid), None)
         if not key:
-            print("[auth] No public key available")
+            print(f"[auth] No key found for kid={kid}")
             return None
 
         # Hardcode allowed algorithms — never trust the token's own alg claim
