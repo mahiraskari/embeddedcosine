@@ -33,17 +33,18 @@ const CloseIcon = () => (
     </svg>
 );
 
-// map pin over a folded map: "map your data"
-const MapIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
-        <path d="M1.5 3.5l4-1.5 5 2 4-1.5v10l-4 1.5-5-2-4 1.5z" />
-        <path d="M5.5 2v10M10.5 4v10" />
+// stacked layers: your datasets
+const LayersIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+        <path d="M12 3.5 21 8.5 12 13.5 3 8.5Z" />
+        <path d="M3 12.5 12 17.5 21 12.5" />
+        <path d="M3 16.5 12 21.5 21 16.5" />
     </svg>
 );
 
 // the project logo (same file as the favicon): two vectors from one origin and the angle
 // between them, which is exactly what cosine similarity measures
-const CosineMark = ({ size = 28 }) => (
+const CosineMark = ({ size = 32 }) => (
     <img src="/logo.svg" width={size} height={size} alt="" aria-hidden="true" style={{ display: "block", borderRadius: 6 }} />
 );
 
@@ -154,8 +155,8 @@ export default function Navbar() {
                         </button>
                     )}
                     {session !== undefined && (
-                        <button className="site-nav-action site-nav-cta" onClick={() => go("/datasets")}>
-                            <MapIcon />
+                        <button className={`site-nav-action site-nav-cta${session ? " is-signed-in" : ""}`} onClick={() => go("/datasets")} aria-label={session ? "My datasets" : "Map your data"}>
+                            <LayersIcon />
                             <span className="site-nav-label">{session ? "My datasets" : "Map your data"}</span>
                         </button>
                     )}

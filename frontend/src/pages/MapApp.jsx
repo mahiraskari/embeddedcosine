@@ -4,7 +4,6 @@ import MapView from "../components/MapView";
 import ResultsPanel from "../components/ResultsPanel";
 import ClickPanel from "../components/ClickPanel";
 import KeybindPanel from "../components/KeybindPanel";
-import MapTaskbar from "../components/MapTaskbar";
 import { fetchProjectPoints, fetchDemoPoints, searchGames, fetchProjectMeta, fetchDemoMeta } from "../api/client";
 import "../App.css";
 
@@ -190,7 +189,6 @@ export default function MapApp() {
                             onTopKChange={handleTopKChange}
                         />
                     )}
-                    <MapTaskbar />
                     {showKeys && (
                         <KeybindPanel onClose={() => setShowKeys(false)} />
                     )}

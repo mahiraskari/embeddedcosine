@@ -1,27 +1,10 @@
 /* ── Intro: an XP welcome / log-on screen band ───────────────────────────── */
-/* full-bleed blue band, white line on top, the XP orange line underneath */
+/* full-bleed blue band */
 .xp-welcome {
     position: relative;
     margin: -40px calc(-1 * var(--edge)) 40px;
     padding: 56px var(--edge) 60px;
     background: linear-gradient(90deg, #1b3f8f 0%, #2a5bc4 45%, #2453b6 75%, #1b3f8f 100%);
-}
-.xp-welcome::before,
-.xp-welcome::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 2px;
-}
-.xp-welcome::before {
-    top: 0;
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.85) 35%, rgba(255, 255, 255, 0.85) 65%, transparent 100%);
-}
-.xp-welcome::after {
-    bottom: 0;
-    height: 3px;
-    background: linear-gradient(90deg, transparent 0%, #f39a3d 30%, #f6b26b 50%, #f39a3d 70%, transparent 100%);
 }
 .xp-welcome-inner {
     max-width: 64rem;
@@ -30,7 +13,7 @@
 .landing-byline {
     margin: 0 0 12px;
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 15px;
     color: rgba(255, 255, 255, 0.75);
 }
 
@@ -39,12 +22,24 @@
     margin: 0;
     max-width: 24ch;
     font-family: "Trebuchet MS", "Lucida Grande", "Segoe UI", var(--font);
-    font-size: clamp(34px, 3.8vw, 60px);
+    font-size: clamp(44px, 5.4vw, 84px);
     font-weight: 700;
     line-height: 1.08;
     letter-spacing: -0.01em;
     color: #fff;
     text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+    text-wrap: balance;
+}
+
+/* the slogan sits right under the name, as a subheading */
+.landing-slogan {
+    margin: 10px 0 0;
+    max-width: 42ch;
+    font-family: "Trebuchet MS", "Lucida Grande", "Segoe UI", var(--font);
+    font-size: clamp(20px, 2vw, 30px);
+    font-weight: 400;
+    line-height: 1.25;
+    color: rgba(255, 255, 255, 0.92);
     text-wrap: balance;
 }
 
@@ -67,7 +62,7 @@
 .xp-welcome .btn-light:hover { background: #eef3ff; }
 
 .landing-intro-link {
-    font-size: 14px;
+    font-size: 16px;
     white-space: nowrap;
 }
 .xp-welcome .text-link,
@@ -124,7 +119,7 @@
     outline: none;
     color: var(--text);
     font: inherit;
-    font-size: 13px;
+    font-size: 15px;
 }
 .live-demo-search-input::placeholder { color: var(--muted); }
 
@@ -132,7 +127,7 @@
     background: none;
     border: none;
     color: var(--muted);
-    font-size: 12px;
+    font-size: 14px;
     cursor: pointer;
     padding: 4px 6px;
     border-radius: 4px;
@@ -152,7 +147,7 @@
     border-radius: 4px;
     color: #fff;
     font: inherit;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.15s var(--ease);
@@ -168,7 +163,7 @@
     gap: 6px;
 }
 .live-demo-examples-label {
-    font-size: 13px;
+    font-size: 15px;
     color: var(--muted);
     margin-right: 2px;
 }
@@ -180,7 +175,7 @@
     border-radius: 4px;
     color: var(--text-2);
     font: inherit;
-    font-size: 12px;
+    font-size: 14px;
     cursor: pointer;
     transition: color 0.15s var(--ease), background-color 0.15s var(--ease), border-color 0.15s var(--ease);
 }
@@ -206,7 +201,7 @@
     border-radius: 6px;
     color: var(--text-2);
     font: inherit;
-    font-size: 13px;
+    font-size: 15px;
     cursor: pointer;
     white-space: nowrap;
     transition: color 0.15s var(--ease), background-color 0.15s var(--ease), border-color 0.15s var(--ease);
@@ -250,7 +245,7 @@
     border-radius: 4px;
     color: var(--text-2);
     font: inherit;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     transition: color 0.15s var(--ease);
@@ -274,7 +269,7 @@
     flex: 1 1 420px;
     max-width: 80ch;
     margin: 0;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.6;
     color: var(--text-2);
 }
@@ -286,14 +281,14 @@
 }
 .live-demo-info-specs div { min-width: 0; }
 .live-demo-info-specs dt {
-    font-size: 12px;
+    font-size: 14px;
     color: var(--muted);
     margin-bottom: 2px;
 }
 .live-demo-info-specs dd {
     margin: 0;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text);
     white-space: nowrap;
 }
@@ -308,7 +303,7 @@
     border-radius: 4px;
     color: var(--muted);
     font: inherit;
-    font-size: 12px;
+    font-size: 14px;
     cursor: pointer;
     transition: color 0.15s var(--ease), background-color 0.15s var(--ease);
 }
@@ -337,7 +332,7 @@
     gap: 12px;
     padding: 0 24px;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 15px;
     text-align: center;
 }
 
@@ -363,7 +358,7 @@
 
 .live-demo-status {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 14px;
     color: var(--muted);
     font-variant-numeric: tabular-nums;
     min-width: 0;
@@ -420,18 +415,18 @@
 .about-step-n {
     display: block;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 14px;
     color: var(--accent-text);
     margin-bottom: 8px;
 }
 .about-step-title {
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 500;
     color: var(--text);
     margin-bottom: 6px;
 }
 .about-step-desc {
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.6;
     color: var(--text-2);
 }
@@ -440,7 +435,7 @@
     margin-top: 10px;
     padding: 2px 8px;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 14px;
     color: var(--accent-text);
     background: var(--accent-soft);
     border: 1px solid var(--accent-line);
@@ -449,7 +444,7 @@
 .about-name-note {
     margin: 16px 0 0;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 14px;
     color: var(--muted);
 }
 .about-name-note span { color: var(--accent-text); }
@@ -457,7 +452,7 @@
 /* run_locally.txt */
 .about-mono-link {
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 15px;
     word-break: break-all;
 }
 
@@ -474,12 +469,12 @@
 .about-stack-row:last-child  { border-bottom: none; padding-bottom: 0; }
 .about-stack-row dt {
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 15px;
     color: var(--accent-text);
 }
 .about-stack-row dd {
     margin: 0;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.6;
     color: var(--text-2);
 }

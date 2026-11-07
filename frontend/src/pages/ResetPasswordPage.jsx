@@ -98,10 +98,10 @@ const s = {
         letterSpacing: "-0.4px", marginBottom: 6,
     },
     subtitle: {
-        fontSize: 12, color: "var(--muted)", marginBottom: 20,
+        fontSize: 14, color: "var(--muted)", marginBottom: 20,
     },
     waiting: {
-        fontSize: 12, color: "var(--text-2)",
+        fontSize: 14, color: "var(--text-2)",
     },
     form: {
         display: "flex", flexDirection: "column", gap: 10,
@@ -112,19 +112,19 @@ const s = {
         color: "var(--text)",
         padding: "0 12px",
         height: 36, borderRadius: 3,
-        fontSize: 13, outline: "none",
+        fontSize: 15, outline: "none",
         fontFamily: "inherit", transition: "border-color 0.15s",
     },
     btn: {
         background: "var(--accent)", border: "none",
         color: "var(--text)", height: 36, borderRadius: 3,
-        fontSize: 13, fontWeight: 600, cursor: "pointer",
+        fontSize: 15, fontWeight: 600, cursor: "pointer",
         marginTop: 4, fontFamily: "inherit",
     },
     error: {
-        fontSize: 12, color: "var(--negative)", margin: 0,
+        fontSize: 14, color: "var(--negative)", margin: 0,
     },
     success: {
-        fontSize: 12, color: "#34d399", margin: 0,
+        fontSize: 14, color: "#34d399", margin: 0,
     },
 };

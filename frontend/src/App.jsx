@@ -6,8 +6,7 @@ import ProjectsPage from "./pages/ProjectsPage";
 import MapApp from "./pages/MapApp";
 import SupportPage from "./pages/SupportPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
-import MapTaskbar from "./components/MapTaskbar";
-import { pageTaskbar } from "./components/mapTaskbarStore";
+import ClosedWindowsBar from "./components/ClosedWindowsBar";
 
 // Wraps routes that require a logged-in user.
 // Redirects to /login if there's no active session.
@@ -16,6 +15,18 @@ function ProtectedRoute({ session, children }) {
     if (!session) return <Navigate to="/?login=true" replace />;
     return children;
 }
+
+// If a sign-in (e.g. GitHub) failed, Supabase sends the reason back in the URL.
+// Pick it up once, clean the URL, and reopen the sign-in window showing the message.
+function readAuthError() {
+    const params = new URLSearchParams(window.location.hash.slice(1) || window.location.search);
+    let msg = params.get("error_description") || (params.get("error") && params.get("error").replace(/_/g, " "));
+    try { msg = msg && decodeURIComponent(msg.replace(/\+/g, " ")); } catch { /* already decoded */ }
+    if (!msg) return null;
+    window.history.replaceState(null, "", "/?login=true&auth_error=" + encodeURIComponent(msg));
+    return msg;
+}
+readAuthError();
 
 export default function App() {
     const [session, setSession] = useState(undefined);
@@ -46,7 +57,7 @@ export default function App() {
                     }
                 />
             </Routes>
-            <MapTaskbar store={pageTaskbar} variant="page" />
+            <ClosedWindowsBar />
         </BrowserRouter>
     );
 }

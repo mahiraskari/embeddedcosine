@@ -29,7 +29,7 @@ function MediaValue({ val }) {
                 onError={e => {
                     e.target.replaceWith(Object.assign(document.createElement("span"), {
                         textContent: str,
-                        style: "font-size:13px;color:#a3a9b8;line-height:1.55;word-break:break-word",
+                        style: "font-size: 15px;color:#a3a9b8;line-height:1.55;word-break:break-word",
                     }));
                 }}
             />
@@ -61,7 +61,7 @@ function MetaRows({ point, embedCols = [] }) {
                         <dt style={{ ...s.key, color: isEmbed ? "var(--accent-text)" : "var(--muted)" }} title={k}>
                             {k}
                         </dt>
-                        <dd style={{ ...s.val, color: isEmbed ? "var(--text)" : "var(--text-2)" }}>
+                        <dd className="keep-case" style={{ ...s.val, color: isEmbed ? "var(--text)" : "var(--text-2)" }}>
                             {v == null || v === ""
                                 ? <span style={{ color: "var(--muted)" }}>—</span>
                                 : <MediaValue val={v} />}
@@ -103,6 +103,7 @@ export default function ClickPanel({ selected, onClose, onRemove, demo, projectI
     return (
         <MapWindow
             id="details"
+            revealKey={selected.map(p => p.Name).join("|")}
             title={isCompare ? "compare.exe" : `${selected[0].Name}.txt`}
             titleExtra={badge}
             onClose={onClose}
@@ -116,7 +117,7 @@ export default function ClickPanel({ selected, onClose, onRemove, demo, projectI
                     {[0, 1].map(i => (
                         <div key={i} style={{ ...s.compareCol, borderLeft: i ? "1px solid var(--line)" : "none" }}>
                             <div style={s.colName}>
-                                <span style={s.colNameText} title={selected[i].Name}>{selected[i].Name}</span>
+                                <span className="keep-case" style={s.colNameText} title={selected[i].Name}>{selected[i].Name}</span>
                                 {onRemove && (
                                     <span
                                         className="xp-title-btn xp-title-btn--close xp-title-btn--sm"
@@ -148,7 +149,7 @@ const s = {
     simBadge: {
         flexShrink: 0,
         fontFamily: "var(--mono)",
-        fontSize: 11,
+        fontSize: 12,
         color: "#fff",
         padding: "2px 8px",
         borderRadius: 4,
@@ -176,7 +177,7 @@ const s = {
     },
     colNameText: {
         flex: 1, minWidth: 0,
-        fontSize: 14, fontWeight: 500, color: "var(--text)",
+        fontSize: 16, fontWeight: 500, color: "var(--text)",
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
     },
     row: {
@@ -188,7 +189,7 @@ const s = {
     },
     key: {
         fontFamily: "var(--mono)",
-        fontSize: 12,
+        fontSize: 14,
         paddingTop: 2,
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         userSelect: "none",
@@ -196,7 +197,7 @@ const s = {
     val: {
         margin: 0,
         maxWidth: "90ch",          // keep long text readable when the window is maximized
-        fontSize: 13, lineHeight: 1.55,
+        fontSize: 15, lineHeight: 1.55,
         wordBreak: "break-word", cursor: "text",
     },
 };

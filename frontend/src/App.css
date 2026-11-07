@@ -40,7 +40,7 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
     color: #fff;
     text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
@@ -73,7 +73,7 @@ body {
     border-radius: 6px;
     color: var(--text-2);
     font: inherit;
-    font-size: 13px;
+    font-size: 15px;
     cursor: pointer;
     white-space: nowrap;
     transition: color 0.15s var(--ease), background-color 0.15s var(--ease);
@@ -104,7 +104,7 @@ body {
     outline: none;
     color: var(--text);
     font: inherit;
-    font-size: 13px;
+    font-size: 15px;
 }
 .search-bar input::placeholder { color: var(--muted); }
 
@@ -112,7 +112,7 @@ body {
     background: none;
     border: none;
     color: var(--muted);
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1;
     padding: 4px 6px;
     border-radius: 4px;
@@ -130,7 +130,7 @@ body {
     border-radius: 4px;
     color: #fff;
     font: inherit;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.15s var(--ease);
@@ -173,7 +173,7 @@ body {
     border-radius: 4px;
     color: var(--text-2);
     font: inherit;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     transition: color 0.15s var(--ease);
@@ -192,7 +192,7 @@ body {
     border-radius: 6px;
     color: var(--text-2);
     font: inherit;
-    font-size: 13px;
+    font-size: 15px;
     cursor: pointer;
     white-space: nowrap;
     transition: color 0.15s var(--ease), background-color 0.15s var(--ease), border-color 0.15s var(--ease);
@@ -218,7 +218,7 @@ body {
     background: var(--raised);
     border-top: 1px solid var(--line);
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 14px;
     color: var(--muted);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
@@ -302,7 +302,7 @@ body {
     gap: 12px;
     height: 100%;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 15px;
 }
 .loading-spinner {
     width: 20px;
@@ -320,5 +320,5 @@ body {
     justify-content: center;
     height: 100%;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 15px;
 }

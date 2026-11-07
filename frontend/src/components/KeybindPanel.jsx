@@ -54,7 +54,7 @@ const s = {
     },
     sectionTitle: {
         margin: "0 0 8px",
-        fontSize: 13, fontWeight: 500, color: "var(--text)",
+        fontSize: 15, fontWeight: 500, color: "var(--text)",
     },
     row: {
         display: "grid",
@@ -69,7 +69,7 @@ const s = {
     kbd: {
         display: "inline-block",
         fontFamily: "var(--mono)",
-        fontSize: 12,
+        fontSize: 14,
         color: "var(--text)",
         padding: "1px 6px",
         background: "var(--raised)",
@@ -79,6 +79,6 @@ const s = {
         whiteSpace: "nowrap",
     },
     desc: {
-        fontSize: 13, color: "var(--text-2)", lineHeight: 1.5,
+        fontSize: 15, color: "var(--text-2)", lineHeight: 1.5,
     },
 };

@@ -45,7 +45,7 @@ export default function AccountMenu({ session }) {
                     width: 32, height: 32, borderRadius: 4,
                     background: "var(--accent)",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 14, fontWeight: 600, color: "#fff",
+                    fontSize: 16, fontWeight: 600, color: "#fff",
                     cursor: "pointer", flexShrink: 0, overflow: "hidden",
                     border: open ? "2px solid var(--accent-text)" : "2px solid rgba(255,255,255,0.55)",
                 }}
@@ -66,7 +66,7 @@ export default function AccountMenu({ session }) {
                                 : <span style={{ fontSize: 18, fontWeight: 600, color: "#fff" }}>{displayName[0]?.toUpperCase()}</span>
                             }
                         </div>
-                        <div style={s.headerText}>
+                        <div className="keep-case" style={s.headerText}>
                             <span style={s.name}>{displayName}</span>
                             <span style={s.email}>{email}</span>
                         </div>
@@ -84,7 +84,7 @@ export default function AccountMenu({ session }) {
                     <div style={s.foot}>
                         {confirmSignOut ? (
                             <>
-                                <span style={{ fontSize: 13, color: "var(--text-2)", marginRight: "auto" }}>Sign out?</span>
+                                <span style={{ fontSize: 15, color: "var(--text-2)", marginRight: "auto" }}>Sign out?</span>
                                 <button style={s.confirmNo} onClick={() => setConfirmSignOut(false)}>Cancel</button>
                                 <button style={s.confirmYes} onClick={handleSignOut}>Sign out</button>
                             </>
@@ -134,12 +134,12 @@ const s = {
         display: "flex", flexDirection: "column", gap: 2, minWidth: 0,
     },
     name: {
-        fontSize: 14, fontWeight: 600, color: "#fff",
+        fontSize: 16, fontWeight: 600, color: "#fff",
         textShadow: "0 1px 0 rgba(0,0,0,0.35)",
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
     },
     email: {
-        fontSize: 12, color: "rgba(255,255,255,0.8)",
+        fontSize: 14, color: "rgba(255,255,255,0.8)",
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
     },
     body: {
@@ -155,7 +155,7 @@ const s = {
         display: "inline-flex", alignItems: "center", gap: 8,
         height: 30, padding: "0 10px 0 6px", lineHeight: 1,
         background: "none", border: "1px solid transparent", borderRadius: 4,
-        color: "var(--text-2)", fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+        color: "var(--text-2)", fontSize: 15, cursor: "pointer", fontFamily: "inherit",
     },
     powerIcon: {
         display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -166,11 +166,11 @@ const s = {
     confirmYes: {
         height: 28, padding: "0 10px",
         background: "var(--xp-close)", border: "1px solid rgba(255,255,255,0.3)",
-        color: "#fff", fontSize: 12, borderRadius: 4, cursor: "pointer", fontFamily: "inherit",
+        color: "#fff", fontSize: 14, borderRadius: 4, cursor: "pointer", fontFamily: "inherit",
     },
     confirmNo: {
         height: 28, padding: "0 10px",
         background: "none", border: "1px solid var(--line-strong)",
-        color: "var(--text-2)", fontSize: 12, borderRadius: 4, cursor: "pointer", fontFamily: "inherit",
+        color: "var(--text-2)", fontSize: 14, borderRadius: 4, cursor: "pointer", fontFamily: "inherit",
     },
 };

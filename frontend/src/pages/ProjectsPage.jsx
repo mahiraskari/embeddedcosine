@@ -4,7 +4,7 @@ import { fetchProjects, renameProject, deleteProject, fetchProjectPreview } from
 import SetupView from "../components/SetupView";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { pageTaskbar } from "../components/mapTaskbarStore";
+import { closedWindows } from "../components/closedWindows";
 
 const THUMB_HEIGHT = 220;
 
@@ -77,14 +77,16 @@ function MiniMap({ projectId }) {
 function ProjectCard({ project, onOpen, onDelete }) {
     const [name, setName] = useState(project.name);
     const [minimized, setMinimized] = useState(false);
+    const [hidden, setHidden] = useState(false);
 
-    // "—" sends the card to the taskbar at the bottom of the screen
+    // ✕ parks the card on the bar at the bottom of the screen until it is clicked there
     useEffect(() => {
         const key = `dataset-${project.id}`;
-        if (minimized) pageTaskbar.add({ key, title: name, restore: () => setMinimized(false) });
-        else pageTaskbar.remove(key);
-    }, [minimized, name, project.id]);
-    useEffect(() => () => pageTaskbar.remove(`dataset-${project.id}`), [project.id]);
+        if (hidden) closedWindows.add({ key, title: name, restore: () => setHidden(false) });
+        else closedWindows.remove(key);
+    }, [hidden, name, project.id]);
+    useEffect(() => () => closedWindows.remove(`dataset-${project.id}`), [project.id]);
+
     const [editing, setEditing] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [hovering, setHovering] = useState(false);
@@ -108,7 +110,8 @@ function ProjectCard({ project, onOpen, onDelete }) {
         <div
             style={{
                 ...styles.card,
-                display: minimized ? "none" : undefined,
+                alignSelf: "start",
+                display: hidden ? "none" : undefined,
                 borderColor: hovering ? "var(--accent-line)" : "var(--line-strong)",
                 boxShadow: "var(--xp-shadow)",
             }}
@@ -134,6 +137,7 @@ function ProjectCard({ project, onOpen, onDelete }) {
                     />
                 ) : (
                     <span
+                        className="keep-case"
                         style={styles.titleText}
                         title="Click to rename"
                         onClick={() => setEditing(true)}
@@ -142,18 +146,20 @@ function ProjectCard({ project, onOpen, onDelete }) {
                     </span>
                 )}
                 <div style={styles.titleBtns}>
-                    <span className="xp-title-btn" role="button" aria-label="Minimize" title="Minimize" onClick={e => { e.stopPropagation(); setMinimized(true); }}>—</span>
+                    <span className="xp-title-btn" role="button" aria-label={minimized ? "Restore" : "Minimize"} title={minimized ? "Restore" : "Minimize"} onClick={e => { e.stopPropagation(); setMinimized(m => !m); }}>—</span>
                     <span className="xp-title-btn" role="button" aria-label="Open map" title="Open map" onClick={() => onOpen(project.id)}>□</span>
                     <span
                         className="xp-title-btn xp-title-btn--close"
                         role="button"
-                        aria-label="Delete dataset"
-                        onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}
+                        aria-label="Close"
+                        title="Close"
+                        onClick={e => { e.stopPropagation(); setConfirmDelete(false); setHidden(true); }}
                     >✕</span>
                 </div>
             </div>
 
-            {/* Thumbnail */}
+            {/* Thumbnail (hidden while rolled up) */}
+            {!minimized && <>
             <div style={styles.thumbArea} onClick={() => onOpen(project.id)}>
                 {project.has_map
                     ? <MiniMap projectId={project.id} />
@@ -165,16 +171,20 @@ function ProjectCard({ project, onOpen, onDelete }) {
             <div style={styles.cardBottom}>
                 {confirmDelete ? (
                     <div style={styles.deleteConfirm}>
-                        <span style={{ fontSize: 11, color: "var(--text-2)" }}>Delete?</span>
+                        <span style={{ fontSize: 12, color: "var(--text-2)" }}>Delete?</span>
                         <button style={styles.confirmYes} onClick={() => onDelete(project.id)}>Yes</button>
                         <button style={styles.confirmNo} onClick={() => setConfirmDelete(false)}>No</button>
                     </div>
                 ) : (
-                    project.point_count > 0 && (
-                        <span style={styles.cardMeta}>{project.point_count.toLocaleString()} points</span>
-                    )
+                    <>
+                        {project.point_count > 0 && (
+                            <span style={styles.cardMeta}>{project.point_count.toLocaleString()} points</span>
+                        )}
+                        <button style={styles.deleteBtn} onClick={() => setConfirmDelete(true)}>Delete</button>
+                    </>
                 )}
             </div>
+            </>}
         </div>
     );
 }
@@ -198,7 +208,7 @@ function NewProjectCard({ onClick }) {
             </div>
             <div style={{ ...styles.thumbArea, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: THUMB_HEIGHT }}>
                 <span style={{ fontSize: 32, color: hovering ? "var(--accent-text)" : "var(--muted)", transition: "color 0.15s" }}>+</span>
-                <span style={{ fontSize: 14, color: hovering ? "var(--accent-text-hover)" : "var(--muted)", marginTop: 8, transition: "color 0.15s", fontFamily: "var(--mono)" }}>
+                <span style={{ fontSize: 16, color: hovering ? "var(--accent-text-hover)" : "var(--muted)", marginTop: 8, transition: "color 0.15s", fontFamily: "var(--mono)" }}>
                     New dataset
                 </span>
             </div>
@@ -295,7 +305,7 @@ const styles = {
     counter: {
         margin: "12px 0 0",
         fontFamily: "var(--mono)",
-        fontSize: 12,
+        fontSize: 14,
         fontVariantNumeric: "tabular-nums",
     },
     pageTitle: {
@@ -303,7 +313,7 @@ const styles = {
         letterSpacing: "-0.4px", marginBottom: 6,
     },
     pageSubtitle: {
-        fontSize: 13, color: "var(--muted)",
+        fontSize: 15, color: "var(--muted)",
     },
     grid: {
         display: "grid",
@@ -328,7 +338,7 @@ const styles = {
         userSelect: "none",
     },
     titleText: {
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: 500,
         color: "#fff",
         fontFamily: "var(--mono)",
@@ -341,7 +351,7 @@ const styles = {
         marginRight: 6,
     },
     titleInput: {
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: 500,
         color: "#fff",
         background: "transparent",
@@ -368,7 +378,12 @@ const styles = {
     },
     noMap: {
         display: "flex", alignItems: "center", justifyContent: "center",
-        height: "100%", fontSize: 11, color: "var(--muted)",
+        height: "100%", fontSize: 12, color: "var(--muted)",
+    },
+    deleteBtn: {
+        marginLeft: "auto",
+        background: "none", border: "none", padding: "2px 4px",
+        color: "var(--muted)", fontSize: 14, cursor: "pointer", fontFamily: "inherit",
     },
     cardBottom: {
         padding: "8px 10px 10px",
@@ -378,19 +393,19 @@ const styles = {
         borderTop: "1px solid var(--line)",
     },
     cardMeta: {
-        fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)",
+        fontSize: 14, color: "var(--muted)", fontFamily: "var(--mono)",
     },
     deleteConfirm: {
         display: "flex", alignItems: "center", gap: 4,
     },
     confirmYes: {
         background: "var(--negative-soft)", border: "1px solid rgba(239,68,68,0.3)",
-        color: "var(--negative)", fontSize: 11, padding: "2px 6px",
+        color: "var(--negative)", fontSize: 12, padding: "2px 6px",
         borderRadius: 2, cursor: "pointer",
     },
     confirmNo: {
         background: "none", border: "1px solid var(--line-strong)",
-        color: "var(--text-2)", fontSize: 11, padding: "2px 6px",
+        color: "var(--text-2)", fontSize: 12, padding: "2px 6px",
         borderRadius: 2, cursor: "pointer",
     },
     newCard: {
@@ -399,6 +414,6 @@ const styles = {
         overflow: "hidden",
     },
     empty: {
-        color: "var(--muted)", fontSize: 13,
+        color: "var(--muted)", fontSize: 15,
     },
 };

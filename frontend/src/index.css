@@ -73,6 +73,32 @@ body {
     color: var(--text);
     font-family: var(--font);
     -webkit-font-smoothing: antialiased;
+    /* the whole interface reads in lowercase, like the window names */
+    text-transform: lowercase;
+}
+
+/* buttons have their own browser default; make them follow the page */
+button {
+    text-transform: inherit;
+}
+/* 2D / 3D keep their capital D */
+.live-demo-dims button,
+.dim-toggle button {
+    text-transform: none;
+}
+
+/* ...except data and anything the user types: names, values, results, emails */
+.keep-case,
+.keep-case *,
+input,
+textarea,
+select,
+option {
+    text-transform: none;
+}
+input::placeholder,
+textarea::placeholder {
+    text-transform: lowercase;
 }
 
 #root {
@@ -102,9 +128,9 @@ body {
 }
 .site-nav-inner {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
-    height: 64px;
+    height: 72px;
     border-bottom: 1px solid var(--line-strong);
 }
 .site-nav-left  { position: relative; justify-self: start; }
@@ -115,7 +141,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    height: 36px;
+    height: 40px;
     padding: 0 4px;
     background: none;
     border: none;
@@ -126,10 +152,9 @@ body {
 }
 .site-nav-action:hover { color: var(--accent-text-hover); }
 .site-nav-label {
-    font-size: 12px;
+    font-size: 17px;
     font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    letter-spacing: 0.01em;
 }
 
 .site-nav-brand {
@@ -141,7 +166,7 @@ body {
     border: none;
     color: var(--text);
     font: inherit;
-    font-size: 17px;
+    font-size: 20px;
     font-weight: 600;
     letter-spacing: -0.01em;
     cursor: pointer;
@@ -172,7 +197,7 @@ body {
     padding: 10px 14px;
     background: var(--xp-title);
     color: #fff;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
@@ -193,7 +218,7 @@ body {
     border: none;
     color: var(--text-2);
     font: inherit;
-    font-size: 14px;
+    font-size: 16px;
     text-align: left;
     text-decoration: none;
     cursor: pointer;
@@ -201,7 +226,7 @@ body {
 }
 .start-menu-item:hover { background: var(--accent); color: #fff; }
 .start-menu-item.is-current { color: var(--text); }
-.start-menu-ext { font-size: 12px; opacity: 0.7; }
+.start-menu-ext { font-size: 14px; opacity: 0.7; }
 .start-menu-foot {
     padding: 6px 0;
     background: var(--raised);
@@ -217,13 +242,15 @@ body {
 .site-nav-signin { color: var(--text-2); }
 .site-nav-signin:hover { color: var(--text); }
 .site-nav-right { gap: 24px; }
-/* the main action gets a light outline so it reads as the button */
+/* the main action is a solid white button so it stands out */
 .site-nav-cta {
-    padding: 0 14px;
-    border: 1px solid var(--line-strong);
+    padding: 0 16px;
+    background: var(--text);
+    color: var(--on-light);
     border-radius: 6px;
+    transition: background-color 0.15s var(--ease);
 }
-.site-nav-cta:hover { border-color: var(--accent-line); }
+.site-nav-cta:hover { background: #fff; color: var(--on-light); }
 
 /* narrow screens: links fold into MENU (the Start-menu window) */
 @media (max-width: 860px) {
@@ -234,9 +261,12 @@ body {
 
 @media (max-width: 640px) {
     .site-nav-inner { height: 56px; }
-    .site-nav-cta { border: none; padding: 0 4px; }
+    /* phones: one item each side. Signed in, the avatar takes the right (datasets stay in the menus) */
+    .site-nav-right { gap: 8px; }
+    .site-nav-cta { width: 36px; height: 36px; padding: 0; justify-content: center; }
+    .site-nav-cta.is-signed-in { display: none; }
     .site-nav-label { display: none; }           /* icons only on phones */
-    .site-nav-brand { font-size: 15px; gap: 8px; }
+    .site-nav-brand { font-size: 17px; gap: 8px; }
     .start-menu { width: min(260px, calc(100vw - 32px)); }
 }
 
@@ -249,7 +279,7 @@ body {
     border-radius: 6px;
     color: var(--text-2);
     font: inherit;
-    font-size: 14px;
+    font-size: 16px;
     cursor: pointer;
     transition: color 0.15s var(--ease), background-color 0.15s var(--ease);
 }
@@ -264,7 +294,7 @@ body {
 .nav-link--icon {
     width: 32px;
     padding: 0;
-    font-size: 17px;
+    font-size: 18px;
     line-height: 1;
     color: var(--muted);
 }
@@ -285,7 +315,7 @@ body {
     box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.25);
     color: #fff;
     font-family: var(--font);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     line-height: 1;
     user-select: none;
@@ -306,7 +336,7 @@ body {
 .xp-title-btn--sm {
     width: 18px;
     height: 18px;
-    font-size: 10px;
+    font-size: 12px;
     cursor: pointer;
 }
 .xp-title-btn[role="button"]:focus-visible {
@@ -372,7 +402,7 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
     color: #fff;
     text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
@@ -411,12 +441,13 @@ body {
     flex-shrink: 0;
 }
 .map-window-title-text {
+    text-transform: none;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
     color: #fff;
     text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
@@ -468,29 +499,16 @@ body {
     opacity: 0.8;
 }
 
-/* map taskbar: minimized map windows wait here */
-.map-taskbar {
-    position: absolute;
-    left: 8px;
-    bottom: 8px;
-    z-index: 400;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    max-width: calc(100% - 16px);
-    padding: 4px;
-    background: linear-gradient(180deg, #2b5fc4 0%, #1d4aa8 100%);
-    border: 1px solid #1e4ca8;
-    border-radius: 6px;
-    box-shadow: var(--xp-shadow);
-}
-/* the same taskbar fixed along the bottom of normal pages */
+
+
+
+/* bar along the bottom of the screen for windows closed with ✕ */
 .page-taskbar {
     position: fixed;
     left: 50%;
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%);
-    z-index: 130;
+    z-index: 5000;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -502,7 +520,8 @@ body {
     border-radius: 6px;
     box-shadow: var(--xp-shadow);
 }
-.map-taskbar-item {
+.page-taskbar-item {
+    text-transform: none;
     max-width: 220px;
     height: 28px;
     padding: 0 12px;
@@ -514,12 +533,11 @@ body {
     border-radius: 4px;
     color: #fff;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 14px;
     cursor: pointer;
     transition: filter 0.15s var(--ease);
 }
-.map-taskbar-item:hover { filter: brightness(1.12); }
-
+.page-taskbar-item:hover { filter: brightness(1.12); }
 
 /* ── Page shell ─────────────────────────────────────────────────────────── */
 .page {
@@ -544,7 +562,7 @@ body {
 .page-sub {
     margin: 8px 0 0;
     max-width: 36rem;
-    font-size: 15px;
+    font-size: 17px;
     line-height: 1.6;
     color: var(--text-2);
 }
@@ -553,7 +571,7 @@ body {
 .prose p {
     max-width: 72ch;
     margin: 0 0 12px;
-    font-size: 15px;
+    font-size: 17px;
     line-height: 1.7;
     color: var(--text-2);
 }
@@ -588,7 +606,7 @@ body {
     border-radius: 6px;
     border: 1px solid transparent;
     font: inherit;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 500;
     text-decoration: none;
     white-space: nowrap;
@@ -611,7 +629,7 @@ body {
     border-color: var(--line-strong);
 }
 .btn-outline:hover { color: var(--text); background: var(--card); }
-.btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
+.btn-sm { height: 32px; padding: 0 12px; font-size: 15px; }
 
 /* XP "Start button" green, kept for the Ko-fi link */
 .btn-kofi {
@@ -624,12 +642,64 @@ body {
 /* ── Support ────────────────────────────────────────────────────────────── */
 .support-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 24px;
     align-items: start;
-    max-width: 1280px;
 }
-.support-row { grid-template-columns: 140px 1fr !important; }
+.support-tip   { grid-column: span 7; }
+.support-costs { grid-column: span 5; }
+.support-free  { grid-column: span 12; }
+.support-grid .xp-window-body { padding: 28px; }
+
+.support-prose p { font-size: 18px; }
+.support-tip-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 24px 0 14px;
+}
+.support-btn { height: 44px; padding: 0 22px; font-size: 17px; }
+.support-note { margin: 0; font-size: 16px; color: var(--muted); }
+
+.support-intro {
+    margin: 0 0 14px;
+    font-size: 17px;
+    color: var(--text-2);
+}
+.support-row { grid-template-columns: 150px 1fr !important; padding: 14px 0 !important; }
+.support-row dt { font-size: 16px !important; }
+.support-row dd { font-size: 17px !important; }
+
+.support-free-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+}
+.support-free-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 20px;
+    background: var(--card);
+}
+.support-free-title { font-size: 17px; font-weight: 500; color: var(--text); }
+.support-free-desc  { font-size: 16px; line-height: 1.55; color: var(--text-2); }
+.support-free-link  { margin-top: auto; padding-top: 8px; font-size: 16px; align-self: flex-start; }
+
+@media (max-width: 960px) {
+    .support-tip, .support-costs, .support-free { grid-column: span 12; }
+}
+@media (max-width: 768px) {
+    .support-grid .xp-window-body { padding: 18px; }
+    .support-row { grid-template-columns: 1fr !important; gap: 4px !important; }
+}
 
 /* ── Setup wizard ───────────────────────────────────────────────────────── */
 .setup-main {
@@ -658,7 +728,7 @@ body {
     border-top: 1px solid var(--line);
 }
 .site-footer-logo {
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 600;
     color: var(--text);
     cursor: pointer;
@@ -673,7 +743,7 @@ body {
     border: none;
     padding: 0;
     font: inherit;
-    font-size: 14px;
+    font-size: 16px;
     color: var(--text-2);
     text-decoration: none;
     cursor: pointer;

@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { taskbar } from "./mapTaskbarStore";
+import { closedWindows } from "./closedWindows";
 
 // Shared stacking order so the window you touch last sits on top
 let topZ = 60;
@@ -14,7 +14,9 @@ const EDGES = ["n", "s", "e", "w", "ne", "nw", "se", "sw"];
  *  — drag by the title bar, double-click it to maximize / restore;
  *    dragging a maximized window restores it under the cursor, like Windows
  *  — resize from any edge or corner (the dotted grip marks the bottom-right corner)
- *  — "—" minimizes to the map taskbar, "□" fills the map, "✕" closes
+ *  — "—" rolls the window up to its title bar (press again to open), "□" fills the map,
+ *    "✕" sends it to the bar at the bottom of the screen (click it there to bring it back)
+ *  — when revealKey changes (new point clicked, new search) a hidden window comes back by itself
  *  — when the content needs more room (details -> compare) it widens in place,
  *    and goes back to its previous width when the content shrinks again
  * Position and size are kept inside the parent (the map container).
@@ -22,7 +24,6 @@ const EDGES = ["n", "s", "e", "w", "ne", "nw", "se", "sw"];
 export default function MapWindow({
     title,
     titleExtra,
-    onClose,
     children,
     defaultWidth = 380,
     defaultHeight = 460,
@@ -31,11 +32,15 @@ export default function MapWindow({
     anchor = "left",          // "left" | "right" | "center" — where it first opens
     offset = { x: 16, y: 16 },
     id,                       // windows with an id remember their position and size
+    revealKey,                // change this to bring a window back from the bottom bar
 }) {
     const ref = useRef(null);
     const [pos, setPos]             = useState({ x: offset.x, y: offset.y });
     const [size, setSize]           = useState({ w: defaultWidth, h: defaultHeight });
     const [minimized, setMinimized] = useState(false);
+    const [hidden, setHidden]       = useState(false);
+    const uid = useId();
+    const closeKey = `map-${uid}`;
     const [maximized, setMaximized] = useState(false);
     const [z, setZ]                 = useState(() => ++topZ);
     const action  = useRef(null);
@@ -43,8 +48,6 @@ export default function MapWindow({
     const lastDef = useRef(defaultWidth);
     const initialPos = useRef(pos);  // the placeholder position before the window is placed
     const sizeRef = useRef(size);
-    const uid = useId();
-    const taskKey = useRef(`${id || "window"}-${uid}`);
     useEffect(() => { sizeRef.current = size; }, [size]);
 
     const parentBox = () => {
@@ -105,16 +108,19 @@ export default function MapWindow({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [defaultWidth]);
 
-    // Minimized windows live on the map taskbar until restored
+    // ✕ parks the window on the bottom bar; clicking it there (or new content) brings it back
     useEffect(() => {
-        const key = taskKey.current;
-        if (minimized) {
-            taskbar.add({ key, title, restore: () => { setMinimized(false); setZ(++topZ); } });
-        } else {
-            taskbar.remove(key);
-        }
-    }, [minimized, title]);
-    useEffect(() => () => taskbar.remove(taskKey.current), []);
+        if (hidden) closedWindows.add({ key: closeKey, title, restore: () => { setHidden(false); setZ(++topZ); } });
+        else closedWindows.remove(closeKey);
+    }, [hidden, title, closeKey]);
+    useEffect(() => () => closedWindows.remove(closeKey), [closeKey]);
+    const lastReveal = useRef(revealKey);
+    useEffect(() => {
+        if (lastReveal.current === revealKey) return;
+        lastReveal.current = revealKey;
+        setHidden(false);
+        setZ(++topZ);
+    }, [revealKey]);
 
     // Remember the latest placement
     useEffect(() => {
@@ -214,36 +220,37 @@ export default function MapWindow({
         >{glyph}</span>
     );
 
-    const resizable = !maximized;
+    const resizable = !maximized && !minimized;
 
     return (
         <div
             ref={ref}
             data-panel
             className={`map-window${maximized ? " is-maximized" : ""}`}
-            style={{ ...box, zIndex: z, display: minimized ? "none" : undefined }}
-            aria-hidden={minimized || undefined}
+            style={{ ...box, zIndex: z, ...(minimized ? { height: "auto" } : null), ...(hidden ? { display: "none" } : null) }}
             onMouseDown={bringToFront}
         >
             <div
                 data-drag-handle
                 className="map-window-title"
                 onMouseDown={startMove}
-                onDoubleClick={e => { if (!e.target.closest(".xp-title-btn")) setMaximized(m => !m); }}
+                onDoubleClick={e => { if (!e.target.closest(".xp-title-btn")) { setMinimized(false); setMaximized(m => !m); } }}
             >
                 <span className="map-window-title-text">{title}</span>
                 {titleExtra}
                 <div className="xp-window-btns" style={{ marginLeft: "auto" }}>
-                    {btn("Minimize", "—", () => setMinimized(true))}
-                    {btn(maximized ? "Restore size" : "Maximize", maximized ? "❐" : "□", () => setMaximized(m => !m))}
-                    {btn("Close", "✕", onClose, "xp-title-btn--close")}
+                    {btn(minimized ? "Restore" : "Minimize", "—", () => setMinimized(m => !m))}
+                    {btn(maximized ? "Restore size" : "Maximize", maximized ? "❐" : "□", () => { setMinimized(false); setMaximized(m => !m); })}
+                    {btn("Close", "✕", () => { setMaximized(false); setHidden(true); }, "xp-title-btn--close")}
                 </div>
             </div>
-            <div className="map-window-body">{children}</div>
-            {/* XP status strip, which holds the resize grip clear of any scrollbar */}
-            <div className="map-window-status">
-                {resizable && <div className="map-window-grip" onMouseDown={startResize("se")} title="Drag to resize" aria-hidden="true" />}
-            </div>
+            {!minimized && <>
+                <div className="map-window-body">{children}</div>
+                {/* XP status strip, which holds the resize grip clear of any scrollbar */}
+                <div className="map-window-status">
+                    {resizable && <div className="map-window-grip" onMouseDown={startResize("se")} title="Drag to resize" aria-hidden="true" />}
+                </div>
+            </>}
             {resizable && EDGES.map(d => (
                 <div key={d} className={`map-window-edge map-window-edge--${d}`} onMouseDown={startResize(d)} aria-hidden="true" />
             ))}

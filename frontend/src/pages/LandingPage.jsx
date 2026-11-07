@@ -90,7 +90,6 @@ function LiveDemo({ navigate }) {
             title="drug_side_effects.exe"
             className="live-demo"
             bodyClassName="live-demo-body"
-            collapsible={false}
             onMaximize={() => openFullMap()}
             maximizeLabel="Open full map"
         >
@@ -206,8 +205,6 @@ const WINDOWS = [
 ];
 
 function AboutWindows({ navigate }) {
-    const [closed, setClosed] = useState([]);
-    const close = (key) => setClosed(c => [...c, key]);
 
     const content = {
         readme: (
@@ -279,8 +276,8 @@ function AboutWindows({ navigate }) {
 
     return (
         <div className="about-grid">
-            {WINDOWS.filter(w => !closed.includes(w.key)).map(w => (
-                <XPWindow key={w.key} title={w.title} className={w.className} draggable onClose={() => close(w.key)}>
+            {WINDOWS.map(w => (
+                <XPWindow key={w.key} title={w.title} className={w.className}>
                     {content[w.key]}
                 </XPWindow>
             ))}
@@ -320,13 +317,13 @@ export default function LandingPage() {
             <main className="page-main">
                 <header className="landing-intro xp-welcome">
                     <div className="xp-welcome-inner">
-                    <p className="landing-byline">A personal project · free and open source</p>
-                    <h1 className="landing-title">
-                        Turn any spreadsheet into a map you can search by meaning
-                    </h1>
+                    <p className="landing-byline">Free and open source</p>
+                    <h1 className="landing-title">embeddedcosine</h1>
+                    <p className="landing-slogan">Find anything in your data just by describing it</p>
                     <p className="landing-lede">
-                        Upload a CSV or JSON file. Every row becomes a dot, similar rows sit together,
-                        and you search by describing what you want. The demo below maps 2,807 drugs by their side effects.
+                        Upload a spreadsheet and type what you are looking for in your own words.
+                        It finds the closest matches, even when they use different words, and shows
+                        similar things next to each other on a map. Try it below on 2,807 medicines.
                     </p>
                     <div className="landing-intro-actions">
                         <button

@@ -1,12 +1,13 @@
-import { useEffect, useId, useRef, useState } from "react";
-import { pageTaskbar } from "./mapTaskbarStore";
+import { useEffect, useId, useState } from "react";
+import { closedWindows } from "./closedWindows";
 
 /**
  * Shared XP-style window for normal pages.
- *  — "—" minimizes to the taskbar along the bottom of the screen (or runs onMinimize when given)
+ *  — "—" rolls the window up so only its title bar shows; press it again to open it
  *  — "□" maximizes: runs onMaximize when given (e.g. open the full map), otherwise the window fills
  *    the screen; ❐, Esc, a double-click on the title or clicking outside restores it
- *  — "✕" runs onClose when given
+ *  — "✕" runs onClose when given; otherwise it sends the window to the bar at the bottom
+ *    of the screen, and clicking it there brings the window back
  *  — draggable windows move by a transform offset from their place in the layout;
  *    dragging a maximized window restores it first, like Windows
  */
@@ -23,24 +24,31 @@ export default function XPWindow({
     draggable = false,
     collapsible = true,
     id,
+    staticChrome = false,     // title bar buttons are decoration only (e.g. the upload wizard)
 }) {
     const [minimized, setMinimized] = useState(false);
+    const [hidden, setHidden] = useState(false);
     const uid = useId();
-    const taskKey = useRef(`page-${uid}`);
+    const closeKey = `win-${uid}`;
+
+    // closed windows wait on the bottom bar until clicked; leaving the page clears them
+    useEffect(() => {
+        if (hidden) closedWindows.add({ key: closeKey, title, restore: () => setHidden(false) });
+        else closedWindows.remove(closeKey);
+    }, [hidden, title, closeKey]);
+    useEffect(() => () => closedWindows.remove(closeKey), [closeKey]);
+
+    const close = () => {
+        if (onClose) { onClose(); return; }
+        setMaximized(false);
+        setHidden(true);
+    };
     const [maximized, setMaximized] = useState(false);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [dragging, setDragging] = useState(false);
 
     const canDrag = draggable && typeof window !== "undefined" && window.innerWidth >= 900;
     const ownMaximize = !onMaximize;
-
-    // Minimized windows wait on the page taskbar until restored; leaving the page clears them
-    useEffect(() => {
-        const key = taskKey.current;
-        if (minimized) pageTaskbar.add({ key, title, restore: () => setMinimized(false) });
-        else pageTaskbar.remove(key);
-    }, [minimized, title]);
-    useEffect(() => () => pageTaskbar.remove(taskKey.current), []);
 
     // Esc restores a maximized window
     useEffect(() => {
@@ -52,13 +60,14 @@ export default function XPWindow({
 
     const toggleMaximize = () => {
         if (onMaximize) { onMaximize(); return; }
+        setMinimized(false);
         setMaximized(m => !m);
     };
 
     const minimize = () => {
         setMaximized(false);
         if (onMinimize) { onMinimize(); return; }
-        setMinimized(true);
+        setMinimized(m => !m);
     };
 
     const onTitleMouseDown = (e) => {
@@ -111,30 +120,36 @@ export default function XPWindow({
 
     return (
         <>
-            {maximized && !minimized && <div className="xp-backdrop" onClick={() => setMaximized(false)} aria-hidden="true" />}
+            {maximized && !minimized && !hidden && <div className="xp-backdrop" onClick={() => setMaximized(false)} aria-hidden="true" />}
             <section
                 id={id}
-                className={`xp-window${dragging ? " is-dragging" : ""}${moved ? " is-moved" : ""}${maximized ? " is-maximized" : ""} ${className}`}
-                style={{ ...style, ...(moved ? { transform: `translate(${offset.x}px, ${offset.y}px)` } : null), ...(minimized ? { display: "none" } : null) }}
+                className={`xp-window${minimized ? " is-rolled-up" : ""}${dragging ? " is-dragging" : ""}${moved ? " is-moved" : ""}${maximized ? " is-maximized" : ""} ${className}`}
+                style={{ ...style, ...(moved ? { transform: `translate(${offset.x}px, ${offset.y}px)` } : null), ...(hidden ? { display: "none" } : null) }}
                 aria-label={title}
             >
                 <div
-                    className={`xp-window-title${canDrag || maximized ? " is-draggable" : ""}`}
-                    onMouseDown={onTitleMouseDown}
-                    onDoubleClick={onTitleDoubleClick}
+                    className={`xp-window-title${!staticChrome && (canDrag || maximized) ? " is-draggable" : ""}`}
+                    onMouseDown={staticChrome ? undefined : onTitleMouseDown}
+                    onDoubleClick={staticChrome ? undefined : onTitleDoubleClick}
                 >
                     <span className="xp-window-title-text">{title}</span>
+                    {staticChrome ? (
+                        <div className="xp-window-btns" aria-hidden="true">
+                            <span className="xp-title-btn">—</span>
+                            <span className="xp-title-btn">□</span>
+                            <span className="xp-title-btn xp-title-btn--close">✕</span>
+                        </div>
+                    ) : (
                     <div className="xp-window-btns">
                         {collapsible
-                            ? btn("Minimize", "—", minimize)
+                            ? btn(minimized ? "Restore" : "Minimize", "—", minimize)
                             : <span className="xp-title-btn" aria-hidden="true">—</span>}
                         {btn(maximized ? "Restore size" : maximizeLabel, maximized ? "❐" : "□", toggleMaximize)}
-                        {onClose
-                            ? btn("Close", "✕", onClose, "xp-title-btn--close")
-                            : <span className="xp-title-btn xp-title-btn--close" aria-hidden="true">✕</span>}
+                        {btn("Close", "✕", close, "xp-title-btn--close")}
                     </div>
+                    )}
                 </div>
-                <div className={`xp-window-body ${bodyClassName}`}>{children}</div>
+                {!minimized && <div className={`xp-window-body ${bodyClassName}`}>{children}</div>}
             </section>
         </>
     );

@@ -7,7 +7,8 @@ export default function LoginModal({ onClose, onSuccess }) {
     const [mode, setMode]         = useState("signin");
     const [email, setEmail]       = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError]       = useState(null);
+    // a failed provider sign-in comes back as ?auth_error=… (see App.jsx)
+    const [error, setError]       = useState(() => new URLSearchParams(window.location.search).get("auth_error"));
     const [message, setMessage]   = useState(null);
     const [loading, setLoading]   = useState(false);
 
@@ -94,7 +95,7 @@ export default function LoginModal({ onClose, onSuccess }) {
                    : "Enter your email and we'll send you a reset link."}
                 </p>
                 {mode !== "forgot" && (
-                    <p style={{ margin: "-12px 0 20px", fontSize: 12, color: "var(--muted)" }}>
+                    <p style={{ margin: "-12px 0 20px", fontSize: 14, color: "var(--muted)" }}>
                         Free account · up to 4 datasets · 25 MB per file
                     </p>
                 )}
@@ -155,7 +156,7 @@ export default function LoginModal({ onClose, onSuccess }) {
                         </span>
                     )}
 
-                    {error   && <p style={s.error}>{error}</p>}
+                    {error   && <p className="keep-case" style={s.error}>{error}</p>}
                     {message && <p style={s.success}>{message}</p>}
 
                     <button type="submit" disabled={loading} style={s.btn}>
@@ -201,7 +202,7 @@ const s = {
         background: "var(--xp-title)", userSelect: "none",
     },
     titleText: {
-        fontFamily: "var(--mono)", fontSize: 12, fontWeight: 500, color: "#fff",
+        fontFamily: "var(--mono)", fontSize: 14, fontWeight: 500, color: "#fff",
         textShadow: "0 1px 0 rgba(0,0,0,0.35)",
     },
     body: {
@@ -212,7 +213,7 @@ const s = {
         letterSpacing: "-0.4px", marginBottom: 6,
     },
     subtitle: {
-        fontSize: 12, color: "var(--muted)", marginBottom: 20,
+        fontSize: 14, color: "var(--muted)", marginBottom: 20,
     },
     oauthRow: {
         display: "flex", gap: 8, marginBottom: 16,
@@ -220,7 +221,7 @@ const s = {
     oauthBtn: {
         flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
         background: "var(--bg-deep)", border: "1px solid var(--line-strong)",
-        color: "var(--text-2)", fontSize: 12, fontWeight: 500,
+        color: "var(--text-2)", fontSize: 14, fontWeight: 500,
         height: 36, borderRadius: 3, cursor: "pointer",
         fontFamily: "inherit", transition: "border-color 0.15s",
     },
@@ -230,7 +231,7 @@ const s = {
         background: "linear-gradient(var(--line-strong), var(--line-strong)) left center / calc(50% - 16px) 1px no-repeat, linear-gradient(var(--line-strong), var(--line-strong)) right center / calc(50% - 16px) 1px no-repeat",
     },
     dividerText: {
-        fontSize: 11, color: "var(--muted)",
+        fontSize: 12, color: "var(--muted)",
         margin: "0 auto",
     },
     form: {
@@ -242,29 +243,29 @@ const s = {
         color: "var(--text)",
         padding: "0 12px",
         height: 36, borderRadius: 3,
-        fontSize: 13, outline: "none",
+        fontSize: 15, outline: "none",
         fontFamily: "inherit", transition: "border-color 0.15s",
     },
     btn: {
         background: "var(--accent)", border: "none",
         color: "#fff", height: 36, borderRadius: 4,
-        fontSize: 13, fontWeight: 600, cursor: "pointer",
+        fontSize: 15, fontWeight: 600, cursor: "pointer",
         marginTop: 4, fontFamily: "inherit",
     },
     error: {
-        fontSize: 12, color: "var(--negative)", margin: 0,
+        fontSize: 14, color: "var(--negative)", margin: 0,
     },
     success: {
-        fontSize: 12, color: "var(--positive)", margin: 0,
+        fontSize: 14, color: "var(--positive)", margin: 0,
     },
     toggle: {
-        fontSize: 12, color: "var(--muted)", marginTop: 20, textAlign: "center",
+        fontSize: 14, color: "var(--muted)", marginTop: 20, textAlign: "center",
     },
     toggleLink: {
         color: "var(--accent-text)", cursor: "pointer",
     },
     forgotLink: {
-        fontSize: 11, color: "var(--muted)", cursor: "pointer",
+        fontSize: 12, color: "var(--muted)", cursor: "pointer",
         alignSelf: "flex-end", marginTop: -4,
         transition: "color 0.15s",
     },

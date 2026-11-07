@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 const LINKS = [
     { label: "GitHub",           href: "https://github.com/mahiraskari/embeddedcosine" },
     { label: "Run locally",      href: "https://github.com/mahiraskari/embeddedcosine/tree/local" },
-    { label: "Find datasets",    href: "https://kaggle.com/datasets" },
 ];
 
 export default function Footer() {

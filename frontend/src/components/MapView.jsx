@@ -11,7 +11,7 @@ const DARK = "#07080d";
 
 function TooltipCard({ point }) {
     return (
-        <div style={{
+        <div className="keep-case" style={{
             background: "var(--raised)",
             border: "1px solid var(--line-strong)",
             borderRadius: 3,
@@ -21,7 +21,7 @@ function TooltipCard({ point }) {
             userSelect: "none",
             fontFamily: "var(--font)",
             color: "var(--text)",
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: 500,
             whiteSpace: "nowrap",
             letterSpacing: "0em",

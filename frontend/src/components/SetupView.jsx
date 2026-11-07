@@ -151,8 +151,7 @@ export default function SetupView({ onDone, onBack }) {
             <XPWindow
                 title="new_dataset.exe"
                 className="setup-window"
-                collapsible={false}
-                onClose={!building && onBack ? onBack : undefined}
+                staticChrome
             >
                 <h1 style={styles.logo}>New dataset</h1>
                 <p style={styles.sub}>Turn a CSV or JSON file into a map you can search by meaning.</p>
@@ -201,7 +200,7 @@ export default function SetupView({ onDone, onBack }) {
                                 <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10, alignItems: "stretch" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between" }}>
                                         <span style={styles.dropText}>Uploading…</span>
-                                        <span style={{ fontSize: 11, color: "var(--text-2)" }}>{uploadProgress}%</span>
+                                        <span style={{ fontSize: 12, color: "var(--text-2)" }}>{uploadProgress}%</span>
                                     </div>
                                     <div style={styles.progressTrack}>
                                         <div style={{ ...styles.progressBar, width: `${uploadProgress}%` }} />
@@ -252,7 +251,7 @@ export default function SetupView({ onDone, onBack }) {
                                                 disabled={isMedia}
                                                 style={{ ...styles.checkbox, cursor: isMedia ? "not-allowed" : "pointer" }}
                                             />
-                                            <span style={{ color: embedCols.includes(c) ? "var(--accent-text-hover)" : "var(--text-2)", fontSize: 12, flex: 1 }}>{c}</span>
+                                            <span style={{ color: embedCols.includes(c) ? "var(--accent-text-hover)" : "var(--text-2)", fontSize: 14, flex: 1 }}>{c}</span>
                                             {isMedia && (
                                                 <span style={styles.mediaBadge}>{mediaType}</span>
                                             )}
@@ -303,8 +302,8 @@ export default function SetupView({ onDone, onBack }) {
                         {building ? (
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                                    <span style={{ fontSize: 11, color: "var(--text-2)" }}>{stageLabel}</span>
-                                    <span style={{ fontSize: 11, color: "var(--text-2)", fontVariantNumeric: "tabular-nums" }}>
+                                    <span style={{ fontSize: 12, color: "var(--text-2)" }}>{stageLabel}</span>
+                                    <span style={{ fontSize: 12, color: "var(--text-2)", fontVariantNumeric: "tabular-nums" }}>
                                         {Math.round(progress)}%
                                     </span>
                                 </div>
@@ -362,7 +361,7 @@ const styles = {
         marginBottom: 6,
     },
     sub: {
-        fontSize: 14, color: "var(--text-2)", marginBottom: 32, lineHeight: 1.6,
+        fontSize: 16, color: "var(--text-2)", marginBottom: 32, lineHeight: 1.6,
     },
     steps: {
         display: "flex", alignItems: "center", marginBottom: 36, gap: 0,
@@ -373,10 +372,10 @@ const styles = {
     stepDot: {
         width: 24, height: 24, borderRadius: 2,
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 11, fontWeight: 600, flexShrink: 0,
+        fontSize: 12, fontWeight: 600, flexShrink: 0,
     },
     stepLabel: {
-        fontSize: 12, fontWeight: 500,
+        fontSize: 14, fontWeight: 500,
     },
     stepLine: {
         width: 32, height: 1, marginLeft: 8, marginRight: 8, flexShrink: 0,
@@ -385,10 +384,10 @@ const styles = {
         display: "flex", flexDirection: "column", gap: 16,
     },
     hint: {
-        fontSize: 13, color: "var(--text-2)", lineHeight: 1.6,
+        fontSize: 15, color: "var(--text-2)", lineHeight: 1.6,
     },
     limitNote: {
-        fontSize: 11, color: "var(--text-2)", fontFamily: "var(--mono)",
+        fontSize: 12, color: "var(--text-2)", fontFamily: "var(--mono)",
     },
     dropzone: {
         border: "1px solid var(--line-strong)",
@@ -402,17 +401,17 @@ const styles = {
         fontSize: 22, color: "var(--accent-text)",
     },
     dropText: {
-        fontSize: 12, color: "var(--text-2)", letterSpacing: "0.01em",
+        fontSize: 14, color: "var(--text-2)", letterSpacing: "0.01em",
     },
     fieldGroup: {
         display: "flex", flexDirection: "column", gap: 6,
     },
     label: {
-        fontSize: 11, fontWeight: 600, color: "var(--accent-text)",
+        fontSize: 12, fontWeight: 600, color: "var(--accent-text)",
         
     },
     fieldHint: {
-        fontSize: 11, color: "var(--muted)", marginBottom: 2,
+        fontSize: 12, color: "var(--muted)", marginBottom: 2,
     },
     select: {
         background: "var(--card)",
@@ -420,7 +419,7 @@ const styles = {
         color: "var(--text)",
         borderRadius: 2,
         padding: "7px 10px",
-        fontSize: 12,
+        fontSize: 14,
         outline: "none",
     },
     nameInput: {
@@ -429,7 +428,7 @@ const styles = {
         color: "var(--text)",
         borderRadius: 2,
         padding: "7px 10px",
-        fontSize: 12,
+        fontSize: 14,
         outline: "none",
         fontFamily: "inherit",
         width: "100%",
@@ -458,7 +457,7 @@ const styles = {
         cursor: "pointer",
     },
     mediaBadge: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: 600,
         
        
@@ -477,7 +476,7 @@ const styles = {
         display: "flex", flexDirection: "column", gap: 10,
     },
     previewTitle: {
-        fontSize: 11, color: "var(--muted)", marginBottom: 4,
+        fontSize: 12, color: "var(--muted)", marginBottom: 4,
         fontWeight: 600,
     },
     previewRow: {
@@ -485,10 +484,10 @@ const styles = {
         borderBottom: "1px solid #111120", paddingBottom: 8,
     },
     previewName: {
-        fontSize: 12, fontWeight: 600, color: "var(--text)",
+        fontSize: 14, fontWeight: 600, color: "var(--text)",
     },
     previewText: {
-        fontSize: 11, color: "var(--text-2)", lineHeight: 1.5,
+        fontSize: 12, color: "var(--text-2)", lineHeight: 1.5,
     },
     btn: {
         background: "var(--accent)",
@@ -496,7 +495,7 @@ const styles = {
         color: "var(--text)",
         padding: "10px 22px",
         borderRadius: 2,
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: 600,
         letterSpacing: "0.03em",
         cursor: "pointer",
@@ -525,7 +524,7 @@ const styles = {
         background: "none",
         border: "none",
         color: "var(--muted)",
-        fontSize: 11,
+        fontSize: 12,
         padding: "16px 0 0",
         cursor: "pointer",
         transition: "color 0.15s",
@@ -534,7 +533,7 @@ const styles = {
     },
     error: {
         marginTop: 12,
-        fontSize: 12,
+        fontSize: 14,
         color: "var(--negative)",
         background: "var(--negative-soft)",
         border: "1px solid rgba(239,68,68,0.15)",
