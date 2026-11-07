@@ -40,13 +40,13 @@ back to whole-row search.
 
 ## Run it locally
 
-You need **Python 3.12**, **Node 20+**, and a free [Supabase](https://supabase.com) project for sign-in.
+You need **Python 3.12** (3.11 also works), **Node.js 20.19+** (22 recommended), and a free [Supabase](https://supabase.com) project for sign-in.
 
 ### Backend
 
 ```bash
 cd backend
-python -m venv venv
+python -m venv venv                 # macOS/Linux may need python3, Windows may need py
 source venv/bin/activate            # Windows: .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt     # CPU-only server? install torch from the CPU index first (see the file)
 cp .env.example .env                # set SUPABASE_URL
