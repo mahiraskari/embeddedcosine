@@ -10,6 +10,8 @@ from auth import get_user_id
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 PROJECTS_DIR = "data/projects"
+MAX_PROJECTS = None   # local branch: no dataset limit
+
 
 _SAFE_ID = re.compile(r"^[a-zA-Z0-9_-]+$")
 

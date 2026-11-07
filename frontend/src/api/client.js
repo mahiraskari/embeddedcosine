@@ -4,8 +4,10 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const api = axios.create({
     baseURL: API_URL,
-    timeout: 8000,
+    timeout: 30000,   // local branch: big local datasets can take a while
 });
+
+// Local branch: no accounts, so requests carry no login token.
 
 export async function fetchDemoPoints(dims = 2) {
     const response = await api.get(`/demo/points?dims=${dims}`);
@@ -59,7 +61,7 @@ export async function uploadDataset(file, onProgress) {
     form.append("file", file);
     const response = await api.post("/dataset/upload", form, {
         headers: { "Content-Type": "multipart/form-data" },
-        timeout: 120000,
+        timeout: 0,
         onUploadProgress: (e) => {
             if (e.total) onProgress?.(Math.round((e.loaded / e.total) * 100));
         },
@@ -68,7 +70,7 @@ export async function uploadDataset(file, onProgress) {
 }
 
 export async function configureDataset(name_col, embed_cols, project_name) {
-    const response = await api.post("/dataset/configure", { name_col, embed_cols, project_name }, { timeout: 60000 });
+    const response = await api.post("/dataset/configure", { name_col, embed_cols, project_name }, { timeout: 0 });
     return response.data;
 }
 

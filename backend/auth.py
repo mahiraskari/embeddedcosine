@@ -1,3 +1,7 @@
+"""
+Local branch: no accounts and no Supabase. Everything belongs to one local user,
+so these return the same id the hosted version would get from a verified login.
+"""
 from fastapi import Header, Query
 
 LOCAL_USER = "local_user"

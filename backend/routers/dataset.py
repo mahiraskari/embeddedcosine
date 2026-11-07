@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import math
 import uuid
@@ -7,16 +8,47 @@ import pandas as pd
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from services.embedder import embed_texts, model as embedder_model
 from services.indexer import build_index
 from services.reducer import reduce
 from auth import get_user_id, get_user_id_from_token_param
+from ratelimit import limit
 
 router = APIRouter(prefix="/dataset", tags=["dataset"])
 
-PROJECTS_DIR    = "data/projects"
-CONFIG_PATH     = "data/config.json"
+PROJECTS_DIR     = "data/projects"
+CONFIG_PATH      = "data/config.json"
+MAX_UPLOAD_BYTES = None   # local branch: no file size limit
+MAX_ROWS         = None   # local branch: no row limit
+
+# Regex to detect media URLs — anchored before an optional query string
+_IMAGE_RE = re.compile(r'https?://.+\.(png|jpg|jpeg|gif|webp|svg)(\?.*)?$', re.IGNORECASE)
+_AUDIO_RE = re.compile(r'https?://.+\.(mp3|wav|ogg|m4a|flac)(\?.*)?$', re.IGNORECASE)
+_VIDEO_RE = re.compile(r'https?://.+\.(mp4|webm|mov|avi|mkv)(\?.*)?$', re.IGNORECASE)
+
+
+def _detect_media_cols(df: pd.DataFrame) -> dict:
+    """Return {col: 'image'|'audio'|'video'} for columns whose values look like media URLs."""
+    media = {}
+    for col in df.columns:
+        sample = df[col].dropna().head(20).astype(str).tolist()
+        hits = {"image": 0, "audio": 0, "video": 0}
+        for val in sample:
+            val = val.strip()
+            if _IMAGE_RE.match(val):
+                hits["image"] += 1
+            elif _AUDIO_RE.match(val):
+                hits["audio"] += 1
+            elif _VIDEO_RE.match(val):
+                hits["video"] += 1
+        # Call it a media column if at least half the sampled values match
+        threshold = max(1, len(sample) // 2)
+        for kind, count in hits.items():
+            if count >= threshold:
+                media[col] = kind
+                break
+    return media
 
 
 def _sanitize_val(v):
@@ -62,7 +94,7 @@ def _find_uploaded(user_id: str) -> str | None:
     return None
 
 
-@router.post("/upload")
+@router.post("/upload", dependencies=[Depends(limit("upload", 20, 3600))])
 async def upload_dataset(file: UploadFile = File(...), user_id: str = Depends(get_user_id)):
     ext = file.filename.rsplit(".", 1)[-1].lower()
     if ext not in ("csv", "json"):
@@ -77,24 +109,55 @@ async def upload_dataset(file: UploadFile = File(...), user_id: str = Depends(ge
             os.remove(old)
 
     save_path = f"{base}.{ext}"
+    written = 0
     with open(save_path, "wb") as f:
         while chunk := await file.read(65536):
+            written += len(chunk)
+            if MAX_UPLOAD_BYTES and written > MAX_UPLOAD_BYTES:
+                f.close()
+                os.remove(save_path)
+                raise HTTPException(status_code=413, detail="File too large (25 MB max)")
             f.write(chunk)
 
-    df = _load_raw(save_path)
+    if save_path.endswith(".csv"):
+        # Try UTF-8 first, fall back to latin-1 which accepts any byte sequence
+        for enc in ("utf-8-sig", "latin-1"):
+            try:
+                preview_df = pd.read_csv(save_path, nrows=5, on_bad_lines="skip", encoding=enc)
+                count_df   = pd.read_csv(save_path, on_bad_lines="skip", encoding=enc)
+                break
+            except UnicodeDecodeError:
+                continue
+        else:
+            raise HTTPException(status_code=400, detail="Could not decode file — try saving it as UTF-8")
+
+        total_rows = len(count_df)
+        if MAX_ROWS and total_rows > MAX_ROWS:
+            os.remove(save_path)
+            raise HTTPException(status_code=413, detail=f"File has too many rows ({total_rows:,}). Max is {MAX_ROWS:,}.")
+    else:
+        preview_df = _load_raw(save_path)
+        total_rows = len(preview_df)
+        if MAX_ROWS and total_rows > MAX_ROWS:
+            os.remove(save_path)
+            raise HTTPException(status_code=413, detail=f"File has too many rows ({total_rows:,}). Max is {MAX_ROWS:,}.")
+
+    preview_df.columns = [str(c) for c in preview_df.columns]
+    media_cols = _detect_media_cols(preview_df)
 
     return {
         "filename": file.filename,
-        "total_rows": len(df),
-        "columns": [str(c) for c in df.columns],
-        "preview": df.head(5).fillna("").to_dict(orient="records"),
+        "total_rows": max(total_rows, 0),
+        "columns": [str(c) for c in preview_df.columns],
+        "preview": preview_df.head(5).fillna("").to_dict(orient="records"),
+        "media_cols": media_cols,
     }
 
 
 class ConfigRequest(BaseModel):
-    name_col: str
-    embed_cols: list[str]
-    project_name: str = "Untitled"
+    name_col: str = Field(..., max_length=256)
+    embed_cols: list[str] = Field(..., max_length=50)
+    project_name: str = Field(default="Untitled", max_length=256)
 
 
 @router.post("/configure")
@@ -113,7 +176,7 @@ def configure_dataset(req: ConfigRequest, user_id: str = Depends(get_user_id)):
     if not req.embed_cols:
         raise HTTPException(status_code=400, detail="Select at least one column to embed")
 
-    user_dir = f"{PROJECTS_DIR}/{user_id}"
+    user_dir = f"{PROJECTS_DIR}/{user_id}"   # local branch: no limit on how many datasets you keep
 
     pid = str(uuid.uuid4())[:8]
     project_dir = f"{user_dir}/{pid}"
@@ -146,7 +209,7 @@ def configure_dataset(req: ConfigRequest, user_id: str = Depends(get_user_id)):
     return {"status": "configured", "project_id": pid, **config}
 
 
-@router.get("/pipeline/stream")
+@router.get("/pipeline/stream", dependencies=[Depends(limit("pipeline", 10, 3600))])
 def run_pipeline_stream(user_id: str = Depends(get_user_id_from_token_param)):
     """SSE endpoint — streams real progress while the pipeline runs."""
 
@@ -163,14 +226,26 @@ def run_pipeline_stream(user_id: str = Depends(get_user_id_from_token_param)):
 
         yield event("loading", 1, "Loading dataset…")
 
-        with open(config_path) as f:
-            config = _json.load(f)
+        try:
+            with open(config_path) as f:
+                config = _json.load(f)
+        except Exception:
+            yield event("error", 0, "Could not read configuration — try configuring again")
+            return
 
         pid = config["project_id"]
         project_dir = f"{PROJECTS_DIR}/{user_id}/{pid}"
         os.makedirs(project_dir, exist_ok=True)
 
-        df = _load_raw(config["file_path"])
+        try:
+            df = _load_raw(config["file_path"])
+        except FileNotFoundError:
+            yield event("error", 0, "Dataset file not found — please re-upload your file")
+            return
+        except Exception as e:
+            yield event("error", 0, f"Failed to load dataset: {str(e)[:120]}")
+            return
+
         df = df.dropna(subset=[config["name_col"]])
         df = df.rename(columns={config["name_col"]: "Name"})
 
@@ -196,11 +271,18 @@ def run_pipeline_stream(user_id: str = Depends(get_user_id_from_token_param)):
         n_batches = len(batches)
         all_embeddings = []
 
-        for i, batch in enumerate(batches):
-            batch_emb = embedder_model.encode(batch, show_progress_bar=False)
-            all_embeddings.append(batch_emb)
-            pct = 3 + int((i + 1) / n_batches * 72)
-            yield event("embedding", pct, f"Analysing {i + 1} / {n_batches}…")
+        try:
+            for i, batch in enumerate(batches):
+                batch_emb = embedder_model.encode(batch, show_progress_bar=False)
+                all_embeddings.append(batch_emb)
+                pct = 3 + int((i + 1) / n_batches * 72)
+                yield event("embedding", pct, f"Analysing {i + 1} / {n_batches}…")
+        except MemoryError:
+            yield event("error", 0, "Out of memory during embedding — try a smaller file")
+            return
+        except Exception as e:
+            yield event("error", 0, f"Embedding failed: {str(e)[:120]}")
+            return
 
         embeddings = np.vstack(all_embeddings)
         np.save(f"{project_dir}/embeddings.npy", embeddings)
@@ -209,14 +291,18 @@ def run_pipeline_stream(user_id: str = Depends(get_user_id_from_token_param)):
         metadata = [_sanitize_record(r) for r in raw_meta]
         np.save(f"{project_dir}/metadata.npy", metadata)
 
-        yield event("indexing", 77, "Building search index…")
-        build_index(data_dir=project_dir)
+        try:
+            yield event("indexing", 77, "Building search index…")
+            build_index(data_dir=project_dir)
 
-        yield event("umap2d", 80, "Calculating map layout…")
-        reduce(n_components=2, data_dir=project_dir)
+            yield event("umap2d", 80, "Calculating map layout…")
+            reduce(n_components=2, data_dir=project_dir)
 
-        yield event("umap3d", 90, "Finalising 3D layout…")
-        reduce(n_components=3, data_dir=project_dir)
+            yield event("umap3d", 90, "Finalising 3D layout…")
+            reduce(n_components=3, data_dir=project_dir)
+        except Exception as e:
+            yield event("error", 0, f"Pipeline failed: {str(e)[:120]}")
+            return
 
         meta_path = f"{project_dir}/meta.json"
         if os.path.exists(meta_path):

@@ -1,10 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchProjects, renameProject, deleteProject, fetchProjectPreview } from "../api/client";
+import { friendlyError } from "../api/errors";
 import SetupView from "../components/SetupView";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import { closedWindows } from "../components/closedWindows";
 
-const DOT_COLORS = ["#818cf8","#a78bfa","#c084fc","#6366f1","#38bdf8","#34d399","#fbbf24","#f87171"];
+const THUMB_HEIGHT = 220;
+
+// Same position-based colouring as the main map: x sweeps teal → blue → violet → pink, y shifts lightness
+const hsl = (h, s, l) => `hsl(${h} ${s}% ${l}%)`;
 
 function MiniMap({ projectId }) {
     const canvasRef = useRef(null);
@@ -31,33 +37,39 @@ function MiniMap({ projectId }) {
     useEffect(() => {
         if (!pts || !canvasRef.current) return;
         const canvas = canvasRef.current;
+        // Draw at the real on-screen size (and pixel density) so the preview stays sharp at any card width
+        const dpr = window.devicePixelRatio || 1;
+        const cssW = canvas.clientWidth, cssH = canvas.clientHeight;
+        canvas.width = Math.round(cssW * dpr);
+        canvas.height = Math.round(cssH * dpr);
         const ctx = canvas.getContext("2d");
-        const W = canvas.width, H = canvas.height;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const W = cssW, H = cssH;
         ctx.clearRect(0, 0, W, H);
 
         // Normalise UMAP coordinates to canvas space with a small padding border
         const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
         const minX = Math.min(...xs), maxX = Math.max(...xs);
         const minY = Math.min(...ys), maxY = Math.max(...ys);
-        const pad = 8;
+        const pad = 16;
+        const spanX = (maxX - minX) || 1, spanY = (maxY - minY) || 1;
 
-        pts.forEach((p, i) => {
-            const cx = pad + ((p.x - minX) / (maxX - minX)) * (W - pad * 2);
-            const cy = pad + ((p.y - minY) / (maxY - minY)) * (H - pad * 2);
-            ctx.fillStyle = DOT_COLORS[i % DOT_COLORS.length];
-            ctx.globalAlpha = 0.7;
-            ctx.fillRect(cx - 1, cy - 1, 2, 2);
+        pts.forEach(p => {
+            const nx = (p.x - minX) / spanX, ny = (p.y - minY) / spanY;
+            const cx = pad + nx * (W - pad * 2);
+            const cy = pad + (1 - ny) * (H - pad * 2);
+            ctx.fillStyle = hsl(175 + nx * 150, 72, 72 - ny * 16);
+            ctx.globalAlpha = 0.85;
+            ctx.fillRect(cx - 1.5, cy - 1.5, 3, 3);
         });
         ctx.globalAlpha = 1;
     }, [pts]);
 
     return (
-        <div ref={wrapRef} style={{ width: "100%", height: 110 }}>
+        <div ref={wrapRef} style={{ width: "100%", height: THUMB_HEIGHT }}>
             <canvas
                 ref={canvasRef}
-                width={220}
-                height={110}
-                style={{ width: "100%", height: 110, display: "block" }}
+                style={{ width: "100%", height: THUMB_HEIGHT, display: "block" }}
             />
         </div>
     );
@@ -65,6 +77,17 @@ function MiniMap({ projectId }) {
 
 function ProjectCard({ project, onOpen, onDelete }) {
     const [name, setName] = useState(project.name);
+    const [minimized, setMinimized] = useState(false);
+    const [hidden, setHidden] = useState(false);
+
+    // ✕ parks the card on the bar at the bottom of the screen until it is clicked there
+    useEffect(() => {
+        const key = `dataset-${project.id}`;
+        if (hidden) closedWindows.add({ key, title: name, restore: () => setHidden(false) });
+        else closedWindows.remove(key);
+    }, [hidden, name, project.id]);
+    useEffect(() => () => closedWindows.remove(`dataset-${project.id}`), [project.id]);
+
     const [editing, setEditing] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [hovering, setHovering] = useState(false);
@@ -88,8 +111,10 @@ function ProjectCard({ project, onOpen, onDelete }) {
         <div
             style={{
                 ...styles.card,
-                borderColor: hovering ? "rgba(99,102,241,0.45)" : "rgba(255,255,255,0.08)",
-                boxShadow: hovering ? "5px 5px 0px #000, 0 0 0 1px rgba(99,102,241,0.15)" : "5px 5px 0px #000",
+                alignSelf: "start",
+                display: hidden ? "none" : undefined,
+                borderColor: hovering ? "var(--accent-line)" : "var(--line-strong)",
+                boxShadow: "var(--xp-shadow)",
             }}
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => { setHovering(false); setConfirmDelete(false); }}
@@ -98,8 +123,8 @@ function ProjectCard({ project, onOpen, onDelete }) {
             <div style={{
                 ...styles.titleBar,
                 background: hovering
-                    ? "linear-gradient(180deg, #3a6abf 0%, #24499a 100%)"
-                    : "linear-gradient(180deg, #2d5fa8 0%, #1a3d7a 100%)",
+                    ? "var(--xp-title-hover)"
+                    : "var(--xp-title)",
                 transition: "background 0.15s",
             }}>
                 {editing ? (
@@ -113,6 +138,7 @@ function ProjectCard({ project, onOpen, onDelete }) {
                     />
                 ) : (
                     <span
+                        className="keep-case"
                         style={styles.titleText}
                         title="Click to rename"
                         onClick={() => setEditing(true)}
@@ -121,16 +147,20 @@ function ProjectCard({ project, onOpen, onDelete }) {
                     </span>
                 )}
                 <div style={styles.titleBtns}>
-                    <span style={styles.titleBtn}>—</span>
-                    <span style={styles.titleBtn} onClick={() => onOpen(project.id)}>□</span>
+                    <span className="xp-title-btn" role="button" aria-label={minimized ? "Restore" : "Minimize"} title={minimized ? "Restore" : "Minimize"} onClick={e => { e.stopPropagation(); setMinimized(m => !m); }}>—</span>
+                    <span className="xp-title-btn" role="button" aria-label="Open map" title="Open map" onClick={() => onOpen(project.id)}>□</span>
                     <span
-                        style={{ ...styles.titleBtn, background: "linear-gradient(180deg, #e8504a 0%, #b52020 100%)" }}
-                        onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}
+                        className="xp-title-btn xp-title-btn--close"
+                        role="button"
+                        aria-label="Close"
+                        title="Close"
+                        onClick={e => { e.stopPropagation(); setConfirmDelete(false); setHidden(true); }}
                     >✕</span>
                 </div>
             </div>
 
-            {/* Thumbnail */}
+            {/* Thumbnail (hidden while rolled up) */}
+            {!minimized && <>
             <div style={styles.thumbArea} onClick={() => onOpen(project.id)}>
                 {project.has_map
                     ? <MiniMap projectId={project.id} />
@@ -142,16 +172,20 @@ function ProjectCard({ project, onOpen, onDelete }) {
             <div style={styles.cardBottom}>
                 {confirmDelete ? (
                     <div style={styles.deleteConfirm}>
-                        <span style={{ fontSize: 10, color: "#555" }}>Delete?</span>
+                        <span style={{ fontSize: 12, color: "var(--text-2)" }}>Delete?</span>
                         <button style={styles.confirmYes} onClick={() => onDelete(project.id)}>Yes</button>
                         <button style={styles.confirmNo} onClick={() => setConfirmDelete(false)}>No</button>
                     </div>
                 ) : (
-                    project.point_count > 0 && (
-                        <span style={styles.cardMeta}>{project.point_count.toLocaleString()} points</span>
-                    )
+                    <>
+                        {project.point_count > 0 && (
+                            <span style={styles.cardMeta}>{project.point_count.toLocaleString()} points</span>
+                        )}
+                        <button style={styles.deleteBtn} onClick={() => setConfirmDelete(true)}>Delete</button>
+                    </>
                 )}
             </div>
+            </>}
         </div>
     );
 }
@@ -160,22 +194,22 @@ function NewProjectCard({ onClick }) {
     const [hovering, setHovering] = useState(false);
     return (
         <div
-            style={{ ...styles.card, ...styles.newCard, borderColor: hovering ? "rgba(99,102,241,0.5)" : "rgba(255,255,255,0.06)" }}
+            style={{ ...styles.card, ...styles.newCard, borderColor: hovering ? "var(--accent-line)" : "var(--line-strong)" }}
             onClick={onClick}
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => setHovering(false)}
         >
-            <div style={{ ...styles.titleBar, background: hovering ? "linear-gradient(180deg, #3a6abf 0%, #24499a 100%)" : "linear-gradient(180deg, #1e3d6e 0%, #112548 100%)", transition: "background 0.15s" }}>
+            <div style={{ ...styles.titleBar, background: hovering ? "var(--xp-title-hover)" : "var(--xp-title-idle)", transition: "background 0.15s" }}>
                 <span style={styles.titleText}>new_dataset.exe</span>
                 <div style={styles.titleBtns}>
-                    <span style={styles.titleBtn}>—</span>
-                    <span style={styles.titleBtn}>□</span>
-                    <span style={{ ...styles.titleBtn, background: "linear-gradient(180deg, #e8504a 0%, #b52020 100%)" }}>✕</span>
+                    <span className="xp-title-btn" aria-hidden="true">—</span>
+                    <span className="xp-title-btn" aria-hidden="true">□</span>
+                    <span className="xp-title-btn xp-title-btn--close" aria-hidden="true">✕</span>
                 </div>
             </div>
-            <div style={{ ...styles.thumbArea, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 110 }}>
-                <span style={{ fontSize: 26, color: hovering ? "#6366f1" : "#2a2a3a", transition: "color 0.15s" }}>+</span>
-                <span style={{ fontSize: 11, color: hovering ? "#a5b4fc" : "#333", marginTop: 6, transition: "color 0.15s", fontFamily: "monospace" }}>
+            <div style={{ ...styles.thumbArea, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: THUMB_HEIGHT }}>
+                <span style={{ fontSize: 32, color: hovering ? "var(--accent-text)" : "var(--muted)", transition: "color 0.15s" }}>+</span>
+                <span style={{ fontSize: 16, color: hovering ? "var(--accent-text-hover)" : "var(--muted)", marginTop: 8, transition: "color 0.15s", fontFamily: "var(--mono)" }}>
                     New dataset
                 </span>
             </div>
@@ -189,9 +223,13 @@ export default function ProjectsPage() {
     const [projects, setProjects] = useState([]);
     const [showSetup, setShowSetup] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
 
     const load = () => {
-        fetchProjects().then(d => setProjects(d.projects)).finally(() => setLoading(false));
+        fetchProjects()
+            .then(d => { setProjects(d.projects); setLoadError(null); })
+            .catch(err => setLoadError(friendlyError(err, "Could not load your datasets.")))
+            .finally(() => setLoading(false));
     };
 
     useEffect(() => { load(); }, []);
@@ -215,19 +253,29 @@ export default function ProjectsPage() {
     }
 
     return (
-        <div style={styles.page}>
+        <div className="page">
             <Navbar />
 
-            <div style={styles.content}>
-                <div style={styles.pageHeader}>
-                    <h1 style={styles.pageTitle}>Datasets</h1>
-                    <p style={styles.pageSubtitle}>
-                        Each dataset is mapped in semantic space.
+            <main className="page-main">
+                <header style={styles.pageHeader}>
+                    <h1 className="page-title">Your datasets</h1>
+                    <p className="page-sub">
+                        Open a map, or add a new CSV or JSON file. Click a title to rename it.
                     </p>
-                </div>
+                    {!loading && (
+                        <p style={styles.counter}>
+                            {projects.length} {projects.length === 1 ? "dataset" : "datasets"} · saved on this machine
+                        </p>
+                    )}
+                </header>
 
                 {loading ? (
                     <div style={styles.empty}>Loading…</div>
+                ) : loadError ? (
+                    <div className="server-error" role="alert">
+                        <span>{loadError}</span>
+                        <button className="btn btn-outline btn-sm" onClick={() => { setLoading(true); load(); }}>Try again</button>
+                    </div>
                 ) : (
                     <div style={styles.grid}>
                         <NewProjectCard onClick={() => setShowSetup(true)} />
@@ -241,7 +289,9 @@ export default function ProjectsPage() {
                         ))}
                     </div>
                 )}
-            </div>
+            </main>
+
+            <Footer />
         </div>
     );
 }
@@ -249,9 +299,9 @@ export default function ProjectsPage() {
 const styles = {
     page: {
         minHeight: "100vh",
-        background: "#05050a",
-        color: "#e2e2e2",
-        fontFamily: '"Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        background: "var(--bg)",
+        color: "var(--text)",
+        fontFamily: "var(--font)",
     },
     content: {
         maxWidth: 1400,
@@ -259,42 +309,49 @@ const styles = {
         padding: "48px 28px",
     },
     pageHeader: {
-        marginBottom: 36,
+        marginBottom: 32,
+    },
+    counter: {
+        margin: "12px 0 0",
+        color: "var(--muted)",
+        fontFamily: "var(--mono)",
+        fontSize: 14,
+        fontVariantNumeric: "tabular-nums",
     },
     pageTitle: {
-        fontSize: 22, fontWeight: 700, color: "#fff",
+        fontSize: 22, fontWeight: 600, color: "var(--text)",
         letterSpacing: "-0.4px", marginBottom: 6,
     },
     pageSubtitle: {
-        fontSize: 13, color: "#3a3a4a",
+        fontSize: 15, color: "var(--muted)",
     },
     grid: {
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-        gap: 16,
+        gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 360px), 1fr))",
+        gap: 24,
     },
     card: {
-        background: "#08080f",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: "var(--card)",
+        border: "1px solid var(--line-strong)",
         borderRadius: 6,
         overflow: "hidden",
-        boxShadow: "5px 5px 0px #000",
+        boxShadow: "var(--xp-shadow)",
         transition: "border-color 0.15s",
     },
     titleBar: {
-        background: "linear-gradient(180deg, #2d5fa8 0%, #1a3d7a 100%)",
-        padding: "7px 10px",
+        background: "var(--xp-title)",
+        padding: "4px 4px 4px 10px",
+        minHeight: 30,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         userSelect: "none",
     },
     titleText: {
-        fontSize: 11,
-        fontWeight: 600,
+        fontSize: 14,
+        fontWeight: 500,
         color: "#fff",
-        letterSpacing: "0.01em",
-        fontFamily: "monospace",
+        fontFamily: "var(--mono)",
         overflow: "hidden",
         textOverflow: "ellipsis",
         whiteSpace: "nowrap",
@@ -304,8 +361,8 @@ const styles = {
         marginRight: 6,
     },
     titleInput: {
-        fontSize: 11,
-        fontWeight: 600,
+        fontSize: 14,
+        fontWeight: 500,
         color: "#fff",
         background: "transparent",
         border: "none",
@@ -315,62 +372,50 @@ const styles = {
         minWidth: 0,
         marginRight: 6,
         padding: 0,
-        fontFamily: "monospace",
+        fontFamily: "var(--mono)",
         letterSpacing: "0.01em",
     },
     titleBtns: {
         display: "flex",
-        gap: 4,
+        gap: 2,
         flexShrink: 0,
     },
-    titleBtn: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 16,
-        height: 13,
-        borderRadius: 2,
-        background: "linear-gradient(180deg, #4a7fd4 0%, #2a5aa8 100%)",
-        border: "1px solid rgba(0,0,0,0.35)",
-        fontSize: 7,
-        color: "#fff",
-        fontWeight: 700,
-        cursor: "pointer",
-        userSelect: "none",
-        letterSpacing: 0,
-        lineHeight: 1,
-    },
     thumbArea: {
-        background: "#07070d",
+        background: "var(--bg-deep)",
         cursor: "pointer",
-        height: 110,
+        height: THUMB_HEIGHT,
         overflow: "hidden",
     },
     noMap: {
         display: "flex", alignItems: "center", justifyContent: "center",
-        height: "100%", fontSize: 11, color: "#2a2a3a",
+        height: "100%", fontSize: 12, color: "var(--muted)",
+    },
+    deleteBtn: {
+        marginLeft: "auto",
+        background: "none", border: "none", padding: "2px 4px",
+        color: "var(--muted)", fontSize: 14, cursor: "pointer", fontFamily: "inherit",
     },
     cardBottom: {
         padding: "8px 10px 10px",
         display: "flex", alignItems: "center", gap: 3,
         minHeight: 32,
-        background: "#08080f",
-        borderTop: "1px solid rgba(255,255,255,0.03)",
+        background: "var(--card)",
+        borderTop: "1px solid var(--line)",
     },
     cardMeta: {
-        fontSize: 11, color: "#2a2a3a", fontFamily: "monospace",
+        fontSize: 14, color: "var(--muted)", fontFamily: "var(--mono)",
     },
     deleteConfirm: {
         display: "flex", alignItems: "center", gap: 4,
     },
     confirmYes: {
-        background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)",
-        color: "#f87171", fontSize: 10, padding: "2px 6px",
+        background: "var(--negative-soft)", border: "1px solid rgba(239,68,68,0.3)",
+        color: "var(--negative)", fontSize: 12, padding: "2px 6px",
         borderRadius: 2, cursor: "pointer",
     },
     confirmNo: {
-        background: "none", border: "1px solid #222",
-        color: "#555", fontSize: 10, padding: "2px 6px",
+        background: "none", border: "1px solid var(--line-strong)",
+        color: "var(--text-2)", fontSize: 12, padding: "2px 6px",
         borderRadius: 2, cursor: "pointer",
     },
     newCard: {
@@ -379,6 +424,6 @@ const styles = {
         overflow: "hidden",
     },
     empty: {
-        color: "#2a2a3a", fontSize: 13,
+        color: "var(--muted)", fontSize: 15,
     },
 };

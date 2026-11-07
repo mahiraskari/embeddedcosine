@@ -1,0 +1,34 @@
+# Versions are pinned to the set tested together (Python 3.12), so a fresh server
+# installs exactly what works instead of whatever is newest that day.
+
+# ── Web framework ─────────────────────────────────────────
+fastapi==0.162.0
+uvicorn[standard]==0.54.0        # ASGI server that runs FastAPI
+python-multipart==0.0.33         # needed for file upload endpoints
+
+# ── Data handling ─────────────────────────────────────────
+pandas==3.1.1                    # load, inspect, and transform CSV data
+numpy==2.5.4                     # numerical array operations (embeddings are numpy arrays)
+
+# ── Embeddings (runs 100% locally, no API key needed) ─────
+# On a CPU-only Linux server, install the small CPU build of torch first:
+#   pip install torch==2.15.0 --index-url https://download.pytorch.org/whl/cpu
+torch==2.15.0
+transformers==5.22.2
+sentence-transformers==6.2.0     # wraps HuggingFace models; gives you .encode(text) -> vector
+
+# ── Vector similarity search ──────────────────────────────
+faiss-cpu==1.15.1                # Facebook's fast nearest-neighbour index (CPU version)
+
+# ── Dimensionality reduction (384D -> 2D for the map) ──────
+umap-learn==0.5.12               # UMAP algorithm
+scikit-learn==1.9.1              # UMAP depends on this
+scipy==1.18.1
+
+# ── Auth ──────────────────────────────────────────────────
+python-jose[cryptography]==3.5.0 # JWT decoding + JWKS verification (ES256)
+requests==2.34.2                 # fetches Supabase JWKS public keys
+
+# ── Config / utilities ────────────────────────────────────
+python-dotenv==1.2.4             # loads .env file into environment variables
+pydantic==2.14.3                 # data validation for API request/response models
