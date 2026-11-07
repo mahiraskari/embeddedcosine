@@ -52,8 +52,8 @@ export default function ResetPasswordPage() {
                             value={password}
                             onChange={e => setPassword(e.target.value)}
                             style={s.input}
-                            onFocus={e => e.target.style.borderColor = "rgba(99,102,241,0.6)"}
-                            onBlur={e => e.target.style.borderColor = "#1e1e2e"}
+                            onFocus={e => e.target.style.borderColor = "var(--accent-line)"}
+                            onBlur={e => e.target.style.borderColor = "var(--line-strong)"}
                         />
                         <input
                             type="password"
@@ -61,8 +61,8 @@ export default function ResetPasswordPage() {
                             value={confirm}
                             onChange={e => setConfirm(e.target.value)}
                             style={s.input}
-                            onFocus={e => e.target.style.borderColor = "rgba(99,102,241,0.6)"}
-                            onBlur={e => e.target.style.borderColor = "#1e1e2e"}
+                            onFocus={e => e.target.style.borderColor = "var(--accent-line)"}
+                            onBlur={e => e.target.style.borderColor = "var(--line-strong)"}
                         />
                         {error   && <p style={s.error}>{error}</p>}
                         {message && <p style={s.success}>{message}</p>}
@@ -79,50 +79,50 @@ export default function ResetPasswordPage() {
 const s = {
     page: {
         minHeight: "100vh",
-        background: "#05050a",
+        background: "var(--bg)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: '"Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        fontFamily: "var(--font)",
     },
     card: {
         width: 360,
-        background: "#0c0c14",
-        border: "1px solid #1a1a28",
+        background: "var(--card)",
+        border: "1px solid var(--line-strong)",
         borderRadius: 3,
         padding: "32px 28px",
-        boxShadow: "5px 5px 0px #000",
+        boxShadow: "var(--xp-shadow)",
     },
     title: {
-        fontSize: 18, fontWeight: 700, color: "#fff",
+        fontSize: 18, fontWeight: 600, color: "var(--text)",
         letterSpacing: "-0.4px", marginBottom: 6,
     },
     subtitle: {
-        fontSize: 12, color: "#3a3a4a", marginBottom: 20,
+        fontSize: 12, color: "var(--muted)", marginBottom: 20,
     },
     waiting: {
-        fontSize: 12, color: "#555",
+        fontSize: 12, color: "var(--text-2)",
     },
     form: {
         display: "flex", flexDirection: "column", gap: 10,
     },
     input: {
-        background: "#07070d",
-        border: "1px solid #1e1e2e",
-        color: "#e2e2e2",
+        background: "var(--bg-deep)",
+        border: "1px solid var(--line-strong)",
+        color: "var(--text)",
         padding: "0 12px",
         height: 36, borderRadius: 3,
         fontSize: 13, outline: "none",
         fontFamily: "inherit", transition: "border-color 0.15s",
     },
     btn: {
-        background: "#6366f1", border: "none",
-        color: "#fff", height: 36, borderRadius: 3,
+        background: "var(--accent)", border: "none",
+        color: "var(--text)", height: 36, borderRadius: 3,
         fontSize: 13, fontWeight: 600, cursor: "pointer",
         marginTop: 4, fontFamily: "inherit",
     },
     error: {
-        fontSize: 12, color: "#f87171", margin: 0,
+        fontSize: 12, color: "var(--negative)", margin: 0,
     },
     success: {
         fontSize: 12, color: "#34d399", margin: 0,

@@ -64,7 +64,7 @@ export default function ResultsPanel({ results, onClose, onFlyTo, topK = 10, onT
                 background: "#0c0c16",
                 border:    "1px solid #1e1e30",
                 borderRadius: 3,
-                boxShadow: "5px 5px 0px #000",
+                boxShadow: "var(--xp-shadow)",
                 userSelect: "none",
             }}
         >
@@ -77,14 +77,14 @@ export default function ResultsPanel({ results, onClose, onFlyTo, topK = 10, onT
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "10px 14px 9px",
-                    borderBottom: "1px solid rgba(255,255,255,0.05)",
+                    borderBottom: "1px solid var(--line)",
                     cursor: "grab",
                 }}
             >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{
-                        fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
-                        color: "#6366f1", textTransform: "uppercase",
+                        fontSize: 11, fontWeight: 600, 
+                        color: "var(--accent-text)"
                     }}>
                         Results
                     </span>
@@ -97,8 +97,8 @@ export default function ResultsPanel({ results, onClose, onFlyTo, topK = 10, onT
                         onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); commitK(); } }}
                         onMouseDown={e => e.stopPropagation()}
                         style={{
-                            fontSize: 10, color: "#a0a0c0", background: "#111",
-                            border: "1px solid #1e1e2e", borderRadius: 3,
+                            fontSize: 11, color: "var(--text-2)", background: "var(--raised)",
+                            border: "1px solid var(--line-strong)", borderRadius: 3,
                             padding: "1px 4px", width: 28, textAlign: "center",
                             outline: "none", fontFamily: "inherit",
                         }}
@@ -110,12 +110,12 @@ export default function ResultsPanel({ results, onClose, onFlyTo, topK = 10, onT
                         onMouseDown={e => e.stopPropagation()}
                         style={{
                             background: "none", border: "none",
-                            color: "#333", fontSize: 14,
+                            color: "var(--muted)", fontSize: 14,
                             cursor: "pointer", padding: "0 2px",
                             lineHeight: 1, transition: "color 0.12s",
                         }}
-                        onMouseEnter={e => e.target.style.color = "#a5b4fc"}
-                        onMouseLeave={e => e.target.style.color = "#333"}
+                        onMouseEnter={e => e.target.style.color = "var(--accent-text-hover)"}
+                        onMouseLeave={e => e.target.style.color = "var(--muted)"}
                     >
                         ✕
                     </button>
@@ -126,12 +126,12 @@ export default function ResultsPanel({ results, onClose, onFlyTo, topK = 10, onT
             <div style={{
                 display: "flex", alignItems: "center", gap: 10,
                 padding: "6px 14px 4px",
-                borderBottom: "1px solid rgba(255,255,255,0.04)",
+                borderBottom: "1px solid var(--line)",
             }}>
                 <span style={{ width: 14, flexShrink: 0 }} />
                 <span style={{ width: 6, flexShrink: 0 }} />
-                <span style={{ flex: 1, fontSize: 9, color: "#2a2a3a", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Match</span>
-                <span style={{ fontSize: 9, color: "#2a2a3a", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", flexShrink: 0 }}>Similarity</span>
+                <span style={{ flex: 1, fontSize: 11, color: "var(--muted)", fontWeight: 600, }}>Match</span>
+                <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600, flexShrink: 0 }}>Similarity</span>
             </div>
 
             {/* Results list */}
@@ -147,13 +147,13 @@ export default function ResultsPanel({ results, onClose, onFlyTo, topK = 10, onT
                             transition: "background 0.1s",
                             cursor: onFlyTo ? "pointer" : "default",
                         }}
-                        onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.06)"}
+                        onMouseEnter={e => e.currentTarget.style.background = "var(--accent-soft)"}
                         onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                         onClick={() => onFlyTo?.(r.Name)}
                     >
                         <span style={{
-                            fontSize: 10, color: "#2a2a3a", width: 14,
-                            textAlign: "right", flexShrink: 0, fontWeight: 700,
+                            fontSize: 11, color: "var(--muted)", width: 14,
+                            textAlign: "right", flexShrink: 0, fontWeight: 600,
                         }}>
                             {i + 1}
                         </span>
@@ -169,7 +169,7 @@ export default function ResultsPanel({ results, onClose, onFlyTo, topK = 10, onT
                             {r.Name}
                         </span>
                         <span style={{
-                            fontSize: 11, color: "#6366f1",
+                            fontSize: 11, color: "var(--accent-text)",
                             fontWeight: 600, fontVariantNumeric: "tabular-nums",
                             flexShrink: 0,
                         }}>

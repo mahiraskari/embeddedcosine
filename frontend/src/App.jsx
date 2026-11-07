@@ -11,7 +11,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 // Wraps routes that require a logged-in user.
 // Redirects to /login if there's no active session.
 function ProtectedRoute({ session, children }) {
-    if (session === undefined) return <div style={{ minHeight: "100vh", background: "#05050a" }} />;
+    if (session === undefined) return <div style={{ minHeight: "100vh", background: "var(--bg)" }} />;
     if (!session) return <Navigate to="/?login=true" replace />;
     return children;
 }

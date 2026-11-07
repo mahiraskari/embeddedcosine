@@ -68,15 +68,15 @@ export default function KeybindPanel({ onClose }) {
                     onClick={onClose}
                     onMouseDown={e => e.stopPropagation()}
                     style={s.closeBtn}
-                    onMouseEnter={e => e.target.style.color = "#a5b4fc"}
-                    onMouseLeave={e => e.target.style.color = "#333"}
+                    onMouseEnter={e => e.target.style.color = "var(--accent-text-hover)"}
+                    onMouseLeave={e => e.target.style.color = "var(--muted)"}
                 >✕</button>
             </div>
 
             {/* Content */}
             <div style={s.body}>
                 {SECTIONS.map(sec => (
-                    <div key={sec.title} style={{ ...s.section, borderBottom: sec.last ? "none" : "1px solid #111" }}>
+                    <div key={sec.title} style={{ ...s.section, borderBottom: sec.last ? "none" : "1px solid var(--line)" }}>
                         <div style={s.sectionTitle}>{sec.title}</div>
                         {sec.rows.map(([key, desc]) => (
                             <div key={key} style={s.row}>
@@ -98,22 +98,22 @@ const s = {
         background: "#0c0c16",
         border: "1px solid #1e1e30",
         borderRadius: 3,
-        boxShadow: "5px 5px 0px #000",
+        boxShadow: "var(--xp-shadow)",
         userSelect: "none",
         width: 320,
     },
     header: {
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "9px 14px 8px",
-        borderBottom: "1px solid #1a1a28",
+        borderBottom: "1px solid var(--line-strong)",
         cursor: "grab",
     },
     headerLabel: {
-        fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
-        color: "#6366f1", textTransform: "uppercase",
+        fontSize: 11, fontWeight: 600, 
+        color: "var(--accent-text)"
     },
     closeBtn: {
-        background: "none", border: "none", color: "#333",
+        background: "none", border: "none", color: "var(--muted)",
         fontSize: 14, cursor: "pointer", padding: "0 2px",
         lineHeight: 1, transition: "color 0.12s",
     },
@@ -123,11 +123,11 @@ const s = {
     },
     section: {
         padding: "6px 14px 10px",
-        borderBottom: "1px solid #111",
+        borderBottom: "1px solid var(--line)",
     },
     sectionTitle: {
-        fontSize: 9, fontWeight: 700, color: "#3a3a5a",
-        textTransform: "uppercase", letterSpacing: "0.1em",
+        fontSize: 11, fontWeight: 600, color: "var(--muted)",
+        
         marginBottom: 8,
     },
     row: {
@@ -135,10 +135,10 @@ const s = {
         padding: "3px 0",
     },
     key: {
-        fontSize: 11, color: "#e2e2e2", fontWeight: 500,
+        fontSize: 11, color: "var(--text)", fontWeight: 500,
         width: 110, flexShrink: 0,
     },
     desc: {
-        fontSize: 11, color: "#3a3a5a", lineHeight: 1.4,
+        fontSize: 11, color: "var(--muted)", lineHeight: 1.4,
     },
 };

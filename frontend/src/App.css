@@ -5,13 +5,13 @@
 }
 
 body {
-    color: #e2e2e2;
-    font-family: "Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--text);
+    font-family: var(--font);
 }
 
 /* Keep logo using system font */
 .logo {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: var(--font);
 }
 
 .app {
@@ -27,16 +27,16 @@ body {
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    border-bottom: 1px solid #111;
-    background: rgba(5, 5, 10, 0.95);
+    border-bottom: 1px solid var(--line);
+    background: rgba(11,13,20,0.95);
     backdrop-filter: blur(12px);
     flex-shrink: 0;
 }
 
 .logo {
     font-size: 15px;
-    font-weight: 700;
-    color: #fff;
+    font-weight: 600;
+    color: var(--text);
     letter-spacing: -0.4px;
     margin-right: 4px;
 }
@@ -50,9 +50,9 @@ body {
 }
 
 .search-bar input {
-    background: #0a0a14;
-    border: 1px solid #1e1e2e;
-    color: #e2e2e2;
+    background: var(--card);
+    border: 1px solid var(--line-strong);
+    color: var(--text);
     padding: 0 14px;
     height: 28px;
     border-radius: 3px;
@@ -63,17 +63,17 @@ body {
 }
 
 .search-bar input:focus {
-    border-color: rgba(99, 102, 241, 0.6);
+    border-color: var(--accent-line);
 }
 
 .search-bar input::placeholder {
-    color: #333;
+    color: var(--muted);
 }
 
 .search-clear {
     background: none;
     border: none;
-    color: #333;
+    color: var(--muted);
     font-size: 15px;
     line-height: 1;
     padding: 4px 6px;
@@ -81,13 +81,13 @@ body {
     cursor: pointer;
     transition: color 0.15s;
 }
-.search-clear:hover { color: #a5b4fc; }
+.search-clear:hover { color: var(--accent-text-hover); }
 
 /* ── 2D / 3D toggle ─────────────────────────────────────────────────────── */
 .dim-toggle {
     display: flex;
-    background: #0a0a14;
-    border: 1px solid #1e1e2e;
+    background: var(--card);
+    border: 1px solid var(--line-strong);
     padding: 3px;
     border-radius: 3px;
     height: 30px;
@@ -100,10 +100,10 @@ body {
     top: 3px;
     height: calc(100% - 6px);
     width: calc(50% - 3px);
-    background: #6366f1;
+    background: var(--accent);
     border-radius: 2px;
-    box-shadow: 0 1px 6px rgba(99, 102, 241, 0.45);
-    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none;
+    transition: transform 0.22s var(--ease);
     pointer-events: none;
 }
 
@@ -113,31 +113,31 @@ body {
 .dim-toggle button {
     background: none;
     border: none;
-    color: #888;
+    color: var(--text-2);
     padding: 0 13px;
     height: 22px;
     border-radius: 2px;
     cursor: pointer;
     font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.05em;
+    letter-spacing: 0;
     transition: color 0.18s;
     position: relative;
     z-index: 1;
 }
 
 .dim-toggle--left  button:first-of-type,
-.dim-toggle--right button:last-of-type  { color: #fff; }
+.dim-toggle--right button:last-of-type  { color: var(--text); }
 
-.dim-toggle button:hover { color: #bbb; }
+.dim-toggle button:hover { color: var(--text-2); }
 .dim-toggle--left  button:first-of-type:hover,
-.dim-toggle--right button:last-of-type:hover  { color: #fff; }
+.dim-toggle--right button:last-of-type:hover  { color: var(--text); }
 
 /* ── Load dataset button ─────────────────────────────────────────────────── */
 .load-dataset-btn {
-    background: #0a0a14;
-    border: 1px solid #1e1e2e;
-    color: #444;
+    background: var(--card);
+    border: 1px solid var(--line-strong);
+    color: var(--text-2);
     padding: 0 13px;
     height: 30px;
     border-radius: 3px;
@@ -145,17 +145,17 @@ body {
     font-weight: 600;
     letter-spacing: 0.03em;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: color 0.15s, background-color 0.15s, border-color 0.15s;
     white-space: nowrap;
 }
 .load-dataset-btn:hover {
-    border-color: rgba(99,102,241,0.5);
-    color: #a5b4fc;
+    border-color: var(--accent-line);
+    color: var(--accent-text-hover);
 }
 .load-dataset-btn.voronoi-active {
-    background: rgba(99,102,241,0.12);
-    border-color: rgba(99,102,241,0.45);
-    color: #a5b4fc;
+    background: var(--accent-soft);
+    border-color: var(--accent-line);
+    color: var(--accent-text-hover);
 }
 
 /* ── Main layout ─────────────────────────────────────────────────────────── */
@@ -204,9 +204,9 @@ body {
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #222;
+    color: var(--muted);
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.2em;
 }
 
@@ -215,6 +215,6 @@ body {
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #333;
+    color: var(--muted);
     font-size: 13px;
 }

@@ -21,7 +21,7 @@ function MediaValue({ val }) {
                     objectFit: "contain",
                     display: "block",
                     marginTop: 4,
-                    background: "#08080f",
+                    background: "var(--card)",
                 }}
                 loading="lazy"
                 onError={e => {
@@ -34,7 +34,7 @@ function MediaValue({ val }) {
         );
     }
     return (
-        <span style={{ fontSize: 11, color: "#a0a0c0", lineHeight: 1.5, flex: 1, wordBreak: "break-word", cursor: "text" }}>
+        <span style={{ fontSize: 11, color: "var(--text-2)", lineHeight: 1.5, flex: 1, wordBreak: "break-word", cursor: "text" }}>
             {str.length > 400 ? str.slice(0, 400) + "…" : str}
         </span>
     );
@@ -56,13 +56,13 @@ function MetaRows({ point, embedCols = [] }) {
             {entries.map(([k, v]) => {
                 const isEmbed = embedSet.has(k);
                 return (
-                    <div key={k} style={{ ...s.row, background: isEmbed ? "rgba(99,102,241,0.07)" : "transparent" }}>
-                        <span style={{ ...s.key, color: isEmbed ? "#818cf8" : "#3a3a5a" }}>
+                    <div key={k} style={{ ...s.row, background: isEmbed ? "var(--accent-soft)" : "transparent" }}>
+                        <span style={{ ...s.key, color: isEmbed ? "var(--accent-text)" : "var(--muted)" }}>
                             {k}
                         </span>
-                        <span style={{ ...s.val, color: isEmbed ? "#c4c4f0" : "#a0a0c0" }}>
+                        <span style={{ ...s.val, color: isEmbed ? "#c4c4f0" : "var(--text-2)" }}>
                             {v == null
-                                ? <span style={{ color: "#333" }}>—</span>
+                                ? <span style={{ color: "var(--muted)" }}>—</span>
                                 : <MediaValue val={v} />}
                         </span>
                     </div>
@@ -125,9 +125,9 @@ export default function ClickPanel({ selected, onClose, demo, projectId, embedCo
                         // Highlight the badge when the two items are strongly similar (>0.7 cosine)
                         <span style={{
                             ...s.simBadge,
-                            background: similarity > 0.7 ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.04)",
-                            color: similarity > 0.7 ? "#a5b4fc" : "#555",
-                            borderColor: similarity > 0.7 ? "rgba(99,102,241,0.3)" : "#1e1e2e",
+                            background: similarity > 0.7 ? "var(--accent-soft)" : "rgba(255,255,255,0.04)",
+                            color: similarity > 0.7 ? "var(--accent-text-hover)" : "var(--text-2)",
+                            borderColor: similarity > 0.7 ? "var(--accent-line)" : "var(--line-strong)",
                         }}>
                             similarity {similarity.toFixed(2)}
                         </span>
@@ -137,8 +137,8 @@ export default function ClickPanel({ selected, onClose, demo, projectId, embedCo
                     onClick={onClose}
                     onMouseDown={e => e.stopPropagation()}
                     style={s.closeBtn}
-                    onMouseEnter={e => e.target.style.color = "#a5b4fc"}
-                    onMouseLeave={e => e.target.style.color = "#333"}
+                    onMouseEnter={e => e.target.style.color = "var(--accent-text-hover)"}
+                    onMouseLeave={e => e.target.style.color = "var(--muted)"}
                 >✕</button>
             </div>
 
@@ -175,27 +175,27 @@ const s = {
         background: "#0c0c16",
         border: "1px solid #1e1e30",
         borderRadius: 3,
-        boxShadow: "5px 5px 0px #000",
+        boxShadow: "var(--xp-shadow)",
         userSelect: "none",
     },
     header: {
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "9px 14px 8px",
-        borderBottom: "1px solid #1a1a28",
+        borderBottom: "1px solid var(--line-strong)",
         cursor: "grab",
         userSelect: "none",
     },
     headerLabel: {
-        fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
-        color: "#6366f1", textTransform: "uppercase",
+        fontSize: 11, fontWeight: 600, 
+        color: "var(--accent-text)"
     },
     simBadge: {
-        fontSize: 10, fontWeight: 600, padding: "2px 7px",
+        fontSize: 11, fontWeight: 600, padding: "2px 7px",
         borderRadius: 2, border: "1px solid",
         fontVariantNumeric: "tabular-nums",
     },
     closeBtn: {
-        background: "none", border: "none", color: "#333",
+        background: "none", border: "none", color: "var(--muted)",
         fontSize: 14, cursor: "pointer", padding: "0 2px",
         lineHeight: 1, transition: "color 0.12s",
     },
@@ -206,9 +206,9 @@ const s = {
         flex: 1, minWidth: 0,
     },
     colName: {
-        fontSize: 11, fontWeight: 700, color: "#e2e2e2",
+        fontSize: 11, fontWeight: 600, color: "var(--text)",
         padding: "8px 14px 6px",
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        borderBottom: "1px solid var(--line)",
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
     },
     divider: {
@@ -225,14 +225,14 @@ const s = {
         alignItems: "flex-start",
     },
     key: {
-        fontSize: 10, color: "#3a3a5a", fontWeight: 700,
-        textTransform: "uppercase", letterSpacing: "0.06em",
+        fontSize: 11, color: "var(--muted)", fontWeight: 600,
+        
         flexShrink: 0, width: 90, paddingTop: 1,
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         userSelect: "none",
     },
     val: {
-        fontSize: 11, color: "#a0a0c0", lineHeight: 1.5, flex: 1,
+        fontSize: 11, color: "var(--text-2)", lineHeight: 1.5, flex: 1,
         wordBreak: "break-word", cursor: "text",
     },
 };

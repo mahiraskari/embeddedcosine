@@ -41,14 +41,19 @@ export default function Navbar() {
                 <span style={s.logo} onClick={() => navigate("/")}>embeddedcosine</span>
 
                 <div style={s.right}>
-                    {!isMobile && <button style={s.refresh} onClick={() => window.location.reload()} title="Refresh" onMouseEnter={e => e.currentTarget.style.color = "#a5b4fc"} onMouseLeave={e => e.currentTarget.style.color = "#6366f1"}>↻</button>}
+                    {!isMobile && <button className="nav-link nav-link--icon" onClick={() => window.location.reload()} title="Refresh" aria-label="Refresh">↻</button>}
                     {!isMobile && LINKS.map(({ label, path }) => (
-                        <button key={label} style={activeStyle(s.link, location.pathname === path)} onClick={() => navigate(path)}>
+                        <button
+                            key={label}
+                            className={`nav-link${location.pathname === path ? " is-active" : ""}`}
+                            aria-current={location.pathname === path ? "page" : undefined}
+                            onClick={() => navigate(path)}
+                        >
                             {label}
                         </button>
                     ))}
                     {session !== undefined && (
-                        <button style={s.cta} onClick={() => navigate("/datasets")}>
+                        <button className="nav-cta" style={s.cta} onClick={() => navigate("/datasets")}>
                             {session ? "My datasets" : "Try it out"}
                         </button>
                     )}
@@ -66,7 +71,7 @@ export default function Navbar() {
                     {LINKS.map(({ label, path }) => (
                         <button
                             key={label}
-                            style={{ ...s.dropdownItem, color: location.pathname === path ? "#fff" : "#555" }}
+                            style={{ ...s.dropdownItem, color: location.pathname === path ? "var(--text)" : "var(--text-2)" }}
                             onClick={() => go(path)}
                         >
                             {label}
@@ -81,87 +86,62 @@ export default function Navbar() {
     );
 }
 
-const activeStyle = (base, isActive) => isActive
-    ? { ...base, color: "#fff", borderColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#fff", borderBottomStyle: "solid" }
-    : base;
-
 const s = {
     navWrapper: {
         position: "sticky",
         top: 0,
         zIndex: 100,
-        fontFamily: '"Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        fontFamily: "var(--font)",
     },
     nav: {
         display: "flex",
         alignItems: "center",
-        padding: "12px 28px",
-        borderBottom: "1px solid #111",
-        background: "rgba(5,5,10,0.95)",
+        minHeight: 56,
+        padding: "10px 32px",
+        borderBottom: "1px solid var(--line)",
+        background: "rgba(11,13,20,0.92)",
         backdropFilter: "blur(12px)",
     },
     logo: {
-        fontSize: 15,
-        fontWeight: 700,
-        color: "#fff",
-        letterSpacing: "-0.4px",
+        fontSize: 16,
+        fontWeight: 600,
+        color: "var(--text)",
+        letterSpacing: "-0.01em",
         cursor: "pointer",
         marginRight: "auto",
     },
     right: {
         display: "flex",
         alignItems: "center",
-        gap: 8,
-    },
-    link: {
-        background: "none",
-        border: "1px solid #1e1e2e",
-        color: "#555",
-        padding: "7px 14px",
-        borderRadius: 3,
-        fontSize: 13,
-        cursor: "pointer",
-        fontFamily: "inherit",
-        transition: "all 0.15s",
-    },
-    refresh: {
-        background: "none",
-        border: "none",
-        color: "#6366f1",
-        padding: "5px 8px",
-        borderRadius: 3,
-        fontSize: 20,
-        cursor: "pointer",
-        fontFamily: "inherit",
-        lineHeight: 1,
-        transition: "color 0.15s",
+        gap: 4,
     },
     cta: {
-        background: "#fff",
+        marginLeft: 8,
+        height: 32,
+        background: "var(--text)",
         border: "none",
-        color: "#0a0a14",
-        padding: "7px 16px",
-        borderRadius: 3,
+        color: "var(--on-light)",
+        padding: "0 14px",
+        borderRadius: 6,
         fontSize: 13,
-        fontWeight: 600,
+        fontWeight: 500,
         cursor: "pointer",
         fontFamily: "inherit",
-        letterSpacing: "-0.2px",
     },
     hamburger: {
         background: "none",
-        border: "1px solid #1e1e2e",
-        color: "#555",
-        padding: "5px 10px",
-        borderRadius: 3,
+        border: "1px solid var(--line-strong)",
+        color: "var(--text-2)",
+        padding: "6px 10px",
+        borderRadius: 6,
         fontSize: 15,
         cursor: "pointer",
         fontFamily: "inherit",
         lineHeight: 1,
     },
     dropdown: {
-        background: "rgba(5,5,10,0.98)",
-        borderBottom: "1px solid #1e1e2e",
+        background: "rgba(11,13,20,0.98)",
+        borderBottom: "1px solid var(--line-strong)",
         display: "flex",
         flexDirection: "column",
         width: "100%",
@@ -170,8 +150,8 @@ const s = {
     dropdownItem: {
         background: "none",
         border: "none",
-        borderBottom: "1px solid #111",
-        color: "#555",
+        borderBottom: "1px solid var(--line)",
+        color: "var(--text-2)",
         padding: "16px 28px",
         fontSize: 14,
         cursor: "pointer",

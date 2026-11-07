@@ -11,7 +11,7 @@ const STACK = [
 ];
 
 const STEPS = [
-    ["01", "Upload",         <>Drop a CSV or JSON. The backend reads the file with pandas and returns a cleaned and tidied column list. <a href="https://kaggle.com" target="_blank" rel="noopener noreferrer" style={{ color: "#818cf8", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>Kaggle</a> is a good place to find datasets on any topic, and what I used for testing.</> ],
+    ["01", "Upload",         <>Drop a CSV or JSON. The backend reads the file with pandas and returns a cleaned and tidied column list. <a href="https://kaggle.com" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-text)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>Kaggle</a> is a good place to find datasets on any topic, and what I used for testing.</> ],
     ["02", "Configure",      "Pick a display-name column and one or more columns to embed. They get joined into a single string per row."],
     ["03", "Embed",          "The AI model reads each row and embeds it into a vector of numbers that captures its meaning.", "embedded"],
     ["04", "Index + reduce", "FAISS builds a cosine-similarity index. UMAP projects the vectors into 2D and 3D space.", "cosine"],
@@ -82,14 +82,18 @@ function XPWindow({ title, children, initialFrac, widthFrac, containerRef, isMob
             <div style={{ ...xp.titleBar, cursor: maximized ? "default" : "grab" }} onMouseDown={onTitleMouseDown}>
                 <span style={xp.titleText}>{title}</span>
                 <div style={xp.titleBtns}>
-                    <span style={xp.titleBtn}>—</span>
+                    <span className="xp-title-btn" aria-hidden="true">—</span>
                     <span
-                        style={{ ...xp.titleBtn, cursor: "pointer" }}
+                        className="xp-title-btn"
+                        role="button"
+                        aria-label={maximized ? "Restore window" : "Maximize window"}
                         onMouseDown={e => e.stopPropagation()}
                         onClick={() => setMaximized(m => !m)}
                     >□</span>
                     <span
-                        style={{ ...xp.titleBtn, cursor: "pointer", background: "linear-gradient(180deg, #e8504a 0%, #b52020 100%)" }}
+                        className="xp-title-btn xp-title-btn--close"
+                        role="button"
+                        aria-label="Close window"
                         onMouseDown={e => e.stopPropagation()}
                         onClick={() => setClosed(true)}
                     >✕</span>
@@ -133,7 +137,7 @@ export default function AboutPage() {
                         ))}
                     </div>
                     <p style={s.nameNote}>
-                        Steps 03 + 04 = <span style={{ color: "#818cf8" }}>embedded</span> + <span style={{ color: "#818cf8" }}>cosine</span> = embeddedcosine
+                        Steps 03 + 04 = <span style={{ color: "var(--accent-text)" }}>embedded</span> + <span style={{ color: "var(--accent-text)" }}>cosine</span> = embeddedcosine
                     </p>
                 </XPWindow>
 
@@ -149,7 +153,7 @@ export default function AboutPage() {
                     ))}
                 </XPWindow>
 
-                <XPWindow title="run_locally.txt" initialFrac={{ x: 0.09, y: 0.58 }} widthFrac={0.28} containerRef={canvasRef} isMobile={isMobile}>
+                <XPWindow title="run_locally.txt" initialFrac={{ x: 0.03, y: 0.63 }} widthFrac={0.34} containerRef={canvasRef} isMobile={isMobile}>
                     <p style={s.readmeText}>
                         There is a local branch of this project made specifically to run it on your
                         own machine without any of the account setup, server limits, or extra configuration.
@@ -162,13 +166,13 @@ export default function AboutPage() {
                         href="https://github.com/mahiraskari/embeddedcosine/tree/local"
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ color: "#818cf8", fontSize: 14, fontFamily: "monospace", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+                        style={{ color: "var(--accent-text)", fontSize: 14, fontFamily: "var(--mono)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
                     >
                         github.com/mahiraskari/embeddedcosine/tree/local
                     </a>
                 </XPWindow>
 
-                <XPWindow title="readme.txt" initialFrac={{ x: 0.42, y: 0.56 }} widthFrac={0.55} containerRef={canvasRef} isMobile={isMobile}>
+                <XPWindow title="readme.txt" initialFrac={{ x: 0.40, y: 0.50 }} widthFrac={0.57} containerRef={canvasRef} isMobile={isMobile}>
                     <p style={s.readmeText}>
                         embeddedcosine turns any structured dataset into a navigable semantic map.
                         Similar things cluster together. You search by meaning, not keywords.
@@ -184,13 +188,13 @@ export default function AboutPage() {
                             href="https://github.com/mahiraskari/embeddedcosine"
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ color: "#818cf8", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+                            style={{ color: "var(--accent-text)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
                         >
                             open source on GitHub
                         </a>
                         . Fork it, edit it, do whatever you want with it. If you build something cool with it or just want to say thanks,{" "}
                         <span
-                            style={{ color: "#818cf8", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+                            style={{ color: "var(--accent-text)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
                             onClick={() => navigate("/support")}
                         >
                             supporting it
@@ -212,56 +216,41 @@ const xp = {
     window: {
         borderRadius: 6,
         overflow: "hidden",
-        border: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "5px 5px 0px #000",
+        border: "1px solid #1e4ca8",
+        boxShadow: "var(--xp-shadow)",
     },
     titleBar: {
-        background: "linear-gradient(180deg, #2d5fa8 0%, #1a3d7a 100%)",
-        padding: "7px 12px",
+        background: "var(--xp-title)",
+        padding: "4px 4px 4px 10px",
+        minHeight: 30,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
+        gap: 12,
         userSelect: "none",
     },
     titleText: {
         fontSize: 12,
-        fontWeight: 600,
+        fontWeight: 500,
         color: "#fff",
-        letterSpacing: "0.01em",
-        fontFamily: "monospace",
+        fontFamily: "var(--mono)",
+        textShadow: "0 1px 0 rgba(0,0,0,0.35)",
     },
     titleBtns: {
         display: "flex",
-        gap: 4,
-    },
-    titleBtn: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 18,
-        height: 14,
-        borderRadius: 2,
-        background: "linear-gradient(180deg, #4a7fd4 0%, #2a5aa8 100%)",
-        border: "1px solid rgba(0,0,0,0.35)",
-        fontSize: 8,
-        color: "#fff",
-        fontWeight: 700,
-        cursor: "default",
-        userSelect: "none",
-        letterSpacing: 0,
-        lineHeight: 1,
+        gap: 2,
     },
     windowBody: {
-        background: "#08080f",
+        background: "var(--card)",
         padding: "20px",
     },
 };
 
 const s = {
     page: {
-        background: "#05050a",
-        color: "#e2e2e2",
-        fontFamily: '"Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        background: "var(--bg)",
+        color: "var(--text)",
+        fontFamily: "var(--font)",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
@@ -269,9 +258,9 @@ const s = {
     canvas: {
         position: "relative",
         width: "100%",
-        minHeight: "calc(100vh - 120px)",
+        minHeight: "max(calc(100vh - 120px), 1000px)",
         flex: 1,
-        padding: "32px 48px",
+        padding: "32px",
         boxSizing: "border-box",
         overflow: "hidden",
     },
@@ -285,84 +274,84 @@ const s = {
         marginBottom: 16,
     },
     stepCard: {
-        background: "#08080f",
+        background: "var(--card)",
         padding: "20px 18px",
     },
     stepN: {
         display: "block",
-        fontSize: 10,
-        fontWeight: 700,
-        color: "#2d5fa8",
-        letterSpacing: "0.1em",
+        fontSize: 11,
+        fontWeight: 600,
+        color: "var(--accent-text)",
+        
         marginBottom: 8,
-        fontFamily: "monospace",
+        fontFamily: "var(--mono)",
     },
     stepTitle: {
         fontSize: 14,
-        fontWeight: 650,
-        color: "#e2e2e2",
+        fontWeight: 500,
+        color: "var(--text)",
         marginBottom: 6,
     },
     stepDesc: {
         fontSize: 12,
-        color: "#444",
+        color: "var(--text-2)",
         lineHeight: 1.6,
     },
     tag: {
         display: "inline-block",
         marginTop: 10,
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: "0.06em",
-        color: "#818cf8",
-        background: "rgba(129,140,248,0.08)",
+        fontSize: 11,
+        fontWeight: 600,
+        
+        color: "var(--accent-text)",
+        background: "var(--accent-soft)",
         border: "1px solid rgba(129,140,248,0.18)",
         padding: "2px 7px",
         borderRadius: 2,
-        fontFamily: "monospace",
+        fontFamily: "var(--mono)",
     },
     nameNote: {
         fontSize: 12,
-        color: "#333",
-        fontFamily: "monospace",
+        color: "var(--muted)",
+        fontFamily: "var(--mono)",
     },
     stackRow: {
         display: "grid",
         gridTemplateColumns: "180px 1fr",
         gap: 16,
         padding: "11px 12px",
-        borderBottom: "1px solid rgba(255,255,255,0.03)",
+        borderBottom: "1px solid var(--line)",
     },
     stackLabel: {
         fontSize: 11,
-        fontWeight: 700,
-        color: "#818cf8",
-        letterSpacing: "0.04em",
-        fontFamily: "monospace",
+        fontWeight: 600,
+        color: "var(--accent-text)",
+        
+        fontFamily: "var(--mono)",
     },
     stackValue: {
         fontSize: 12,
-        color: "#444",
+        color: "var(--text-2)",
         lineHeight: 1.6,
     },
     readmeText: {
         fontSize: 14,
-        color: "#555",
+        color: "var(--text-2)",
         lineHeight: 1.8,
         marginBottom: 12,
-        fontFamily: "monospace",
+        fontFamily: "var(--mono)",
     },
     footer: {
         display: "flex",
         alignItems: "center",
-        padding: "24px 48px",
-        borderTop: "1px solid rgba(255,255,255,0.03)",
+        padding: "24px 32px",
+        borderTop: "1px solid var(--line)",
         marginTop: "auto",
     },
     footerLogo: {
         fontSize: 15,
-        fontWeight: 700,
-        color: "#fff",
+        fontWeight: 600,
+        color: "var(--text)",
         letterSpacing: "-0.4px",
     },
 };

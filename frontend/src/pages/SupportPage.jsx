@@ -74,14 +74,18 @@ function XPWindow({ title, children, initialFrac, widthFrac, containerRef, isMob
             <div style={{ ...xp.titleBar, cursor: maximized ? "default" : "grab" }} onMouseDown={onTitleMouseDown}>
                 <span style={xp.titleText}>{title}</span>
                 <div style={xp.titleBtns}>
-                    <span style={xp.titleBtn}>—</span>
+                    <span className="xp-title-btn" aria-hidden="true">—</span>
                     <span
-                        style={{ ...xp.titleBtn, cursor: "pointer" }}
+                        className="xp-title-btn"
+                        role="button"
+                        aria-label={maximized ? "Restore window" : "Maximize window"}
                         onMouseDown={e => e.stopPropagation()}
                         onClick={() => setMaximized(m => !m)}
                     >□</span>
                     <span
-                        style={{ ...xp.titleBtn, cursor: "pointer", background: "linear-gradient(180deg, #e8504a 0%, #b52020 100%)" }}
+                        className="xp-title-btn xp-title-btn--close"
+                        role="button"
+                        aria-label="Close window"
                         onMouseDown={e => e.stopPropagation()}
                         onClick={() => setClosed(true)}
                     >✕</span>
@@ -162,56 +166,41 @@ const xp = {
     window: {
         borderRadius: 6,
         overflow: "hidden",
-        border: "1px solid rgba(255,255,255,0.06)",
-        boxShadow: "5px 5px 0px #000",
+        border: "1px solid #1e4ca8",
+        boxShadow: "var(--xp-shadow)",
     },
     titleBar: {
-        background: "linear-gradient(180deg, #2d5fa8 0%, #1a3d7a 100%)",
-        padding: "7px 12px",
+        background: "var(--xp-title)",
+        padding: "4px 4px 4px 10px",
+        minHeight: 30,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
+        gap: 12,
         userSelect: "none",
     },
     titleText: {
         fontSize: 12,
-        fontWeight: 600,
+        fontWeight: 500,
         color: "#fff",
-        letterSpacing: "0.01em",
-        fontFamily: "monospace",
+        fontFamily: "var(--mono)",
+        textShadow: "0 1px 0 rgba(0,0,0,0.35)",
     },
     titleBtns: {
         display: "flex",
-        gap: 5,
-    },
-    titleBtn: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 18,
-        height: 14,
-        borderRadius: 2,
-        background: "linear-gradient(180deg, #4a7fd4 0%, #2a5aa8 100%)",
-        border: "1px solid rgba(0,0,0,0.35)",
-        fontSize: 8,
-        color: "#fff",
-        fontWeight: 700,
-        cursor: "default",
-        userSelect: "none",
-        letterSpacing: 0,
-        lineHeight: 1,
+        gap: 2,
     },
     windowBody: {
-        background: "#08080f",
+        background: "var(--card)",
         padding: "24px",
     },
 };
 
 const s = {
     page: {
-        background: "#05050a",
-        color: "#e2e2e2",
-        fontFamily: '"Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        background: "var(--bg)",
+        color: "var(--text)",
+        fontFamily: "var(--font)",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
@@ -219,25 +208,25 @@ const s = {
     eyebrow: {
         fontSize: 11,
         fontWeight: 600,
-        letterSpacing: "0.14em",
-        textTransform: "uppercase",
-        color: "#818cf8",
+        
+       
+        color: "var(--accent-text)",
         marginBottom: 16,
-        fontFamily: "monospace",
+        fontFamily: "var(--mono)",
     },
     heroTitle: {
         fontSize: "clamp(24px, 3vw, 40px)",
-        fontWeight: 800,
-        color: "#fff",
+        fontWeight: 600,
+        color: "var(--text)",
         letterSpacing: "-1.4px",
         lineHeight: 1.08,
         marginBottom: 16,
     },
     heroSub: {
         fontSize: 13,
-        color: "#555",
+        color: "var(--text-2)",
         lineHeight: 1.75,
-        fontFamily: "monospace",
+        fontFamily: "var(--mono)",
         margin: 0,
     },
     canvas: {
@@ -245,7 +234,7 @@ const s = {
         width: "100%",
         flex: 1,
         minHeight: "calc(100vh - 120px)",
-        padding: "32px 48px",
+        padding: "32px",
         boxSizing: "border-box",
         overflow: "hidden",
     },
@@ -256,15 +245,15 @@ const s = {
     },
     tipText: {
         fontSize: 14,
-        color: "#555",
+        color: "var(--text-2)",
         lineHeight: 1.75,
-        fontFamily: "monospace",
+        fontFamily: "var(--mono)",
         margin: 0,
     },
     btn: {
         display: "inline-block",
-        background: "linear-gradient(180deg, #2d5fa8 0%, #1a3d7a 100%)",
-        color: "#fff",
+        background: "var(--xp-title)",
+        color: "var(--text)",
         textDecoration: "none",
         padding: "10px 20px",
         borderRadius: 3,
@@ -277,47 +266,47 @@ const s = {
     },
     note: {
         fontSize: 11,
-        color: "#2a2a3a",
+        color: "var(--muted)",
         margin: 0,
-        fontFamily: "monospace",
+        fontFamily: "var(--mono)",
     },
     row: {
         display: "grid",
         gridTemplateColumns: "160px 1fr",
         gap: 16,
         padding: "12px 12px",
-        borderBottom: "1px solid rgba(255,255,255,0.03)",
+        borderBottom: "1px solid var(--line)",
     },
     rowTitle: {
         fontSize: 12,
-        fontWeight: 700,
-        color: "#818cf8",
+        fontWeight: 600,
+        color: "var(--accent-text)",
         letterSpacing: "0.02em",
-        fontFamily: "monospace",
+        fontFamily: "var(--mono)",
     },
     breakdownNote: {
         fontSize: 11,
-        color: "#2a2a3a",
-        fontFamily: "monospace",
+        color: "var(--muted)",
+        fontFamily: "var(--mono)",
         margin: "16px 12px 0",
         lineHeight: 1.6,
     },
     rowDesc: {
         fontSize: 12,
-        color: "#444",
+        color: "var(--text-2)",
         lineHeight: 1.6,
     },
     footer: {
         display: "flex",
         alignItems: "center",
-        padding: "20px 48px",
-        borderTop: "1px solid rgba(255,255,255,0.03)",
+        padding: "24px 32px",
+        borderTop: "1px solid var(--line)",
         marginTop: "auto",
     },
     footerLogo: {
         fontSize: 15,
-        fontWeight: 700,
-        color: "#fff",
+        fontWeight: 600,
+        color: "var(--text)",
         letterSpacing: "-0.4px",
     },
 };

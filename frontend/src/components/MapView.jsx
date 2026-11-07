@@ -12,15 +12,15 @@ const DARK = "#0f0f0f";
 function TooltipCard({ point }) {
     return (
         <div style={{
-            background: "#0d0d18",
-            border: "1px solid #1e1e35",
+            background: "var(--raised)",
+            border: "1px solid var(--line-strong)",
             borderRadius: 3,
             padding: "5px 10px",
             boxShadow: "0 4px 16px rgba(0,0,0,0.6)",
             pointerEvents: "none",
             userSelect: "none",
-            fontFamily: '"Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-            color: "#d4d4e8",
+            fontFamily: "var(--font)",
+            color: "var(--text)",
             fontSize: 12,
             fontWeight: 500,
             whiteSpace: "nowrap",
@@ -354,9 +354,9 @@ function Scene2D({ points, showVoronoi, searchResults, onPointClick, flyToRef })
             ctx.moveTo(toX(cell[0][0]), toY(cell[0][1]));
             for (let j = 1; j < cell.length; j++) ctx.lineTo(toX(cell[j][0]), toY(cell[j][1]));
             ctx.closePath();
-            ctx.fillStyle   = "rgba(99,102,241,0.07)";
+            ctx.fillStyle   = "rgba(47,111,220,0.10)";
             ctx.fill();
-            ctx.strokeStyle = "rgba(165,180,252,0.55)";
+            ctx.strokeStyle = "rgba(127,176,255,0.55)";
             ctx.lineWidth   = 0.7;
             ctx.stroke();
         }
@@ -528,9 +528,9 @@ function Scene2D({ points, showVoronoi, searchResults, onPointClick, flyToRef })
             ctx.clearRect(0, 0, zc.width, zc.height);
             const x0 = Math.min(zoomStart.x, cur.x), y0 = Math.min(zoomStart.y, cur.y);
             const bw = Math.abs(cur.x - zoomStart.x), bh = Math.abs(cur.y - zoomStart.y);
-            ctx.fillStyle   = "rgba(99,102,241,0.08)";
+            ctx.fillStyle   = "rgba(47,111,220,0.12)";
             ctx.fillRect(x0, y0, bw, bh);
-            ctx.strokeStyle = "#6366f1";
+            ctx.strokeStyle = "#5490f0";
             ctx.lineWidth   = 1.5;
             ctx.setLineDash([4, 3]);
             ctx.strokeRect(x0, y0, bw, bh);

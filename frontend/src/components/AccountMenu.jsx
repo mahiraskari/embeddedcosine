@@ -38,11 +38,11 @@ export default function AccountMenu({ session }) {
                 onClick={() => { setOpen(o => !o); setConfirmSignOut(false); }}
                 style={{
                     width: 30, height: 30, borderRadius: "50%",
-                    background: "#6366f1",
+                    background: "var(--accent)",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 13, fontWeight: 700, color: "#fff",
+                    fontSize: 13, fontWeight: 600, color: "var(--text)",
                     cursor: "pointer", flexShrink: 0, overflow: "hidden",
-                    border: open ? "2px solid #6366f1" : "2px solid transparent",
+                    border: open ? "2px solid var(--accent)" : "2px solid transparent",
                     transition: "border-color 0.15s",
                 }}
             >
@@ -60,7 +60,7 @@ export default function AccountMenu({ session }) {
                         <div style={s.avatarLarge}>
                             {avatarUrl
                                 ? <img src={avatarUrl} alt={displayName} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} onError={e => { e.target.style.display = "none"; }} />
-                                : <span style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{displayName[0]?.toUpperCase()}</span>
+                                : <span style={{ fontSize: 18, fontWeight: 600, color: "var(--text)" }}>{displayName[0]?.toUpperCase()}</span>
                             }
                         </div>
                         <div style={s.headerText}>
@@ -73,12 +73,12 @@ export default function AccountMenu({ session }) {
 
                     {confirmSignOut ? (
                         <div style={s.confirmRow}>
-                            <span style={{ fontSize: 11, color: "#555" }}>Are you sure?</span>
+                            <span style={{ fontSize: 11, color: "var(--text-2)" }}>Are you sure?</span>
                             <button style={s.confirmYes} onClick={handleSignOut}>Sign out</button>
                             <button style={s.confirmNo} onClick={() => setConfirmSignOut(false)}>Cancel</button>
                         </div>
                     ) : (
-                        <button style={{ ...s.menuItem, color: "#f87171" }} onClick={() => setConfirmSignOut(true)}
+                        <button style={{ ...s.menuItem, color: "var(--negative)" }} onClick={() => setConfirmSignOut(true)}
                             onMouseEnter={e => e.currentTarget.style.background = "rgba(248,113,113,0.06)"}
                             onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                         >
@@ -95,12 +95,12 @@ const s = {
     dropdown: {
         position: "absolute", top: "calc(100% + 10px)", right: 0,
         width: 220,
-        background: "#0c0c14",
-        border: "1px solid #1a1a28",
+        background: "var(--card)",
+        border: "1px solid var(--line-strong)",
         borderRadius: 3,
-        boxShadow: "5px 5px 0px #000",
+        boxShadow: "var(--xp-shadow)",
         zIndex: 200,
-        fontFamily: '"Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        fontFamily: "var(--font)",
         overflow: "hidden",
     },
     header: {
@@ -109,7 +109,7 @@ const s = {
     },
     avatarLarge: {
         width: 36, height: 36, borderRadius: "50%",
-        background: "#6366f1", flexShrink: 0,
+        background: "var(--accent)", flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
         overflow: "hidden",
     },
@@ -117,20 +117,20 @@ const s = {
         display: "flex", flexDirection: "column", gap: 2, minWidth: 0,
     },
     name: {
-        fontSize: 13, fontWeight: 600, color: "#e2e2e2",
+        fontSize: 13, fontWeight: 600, color: "var(--text)",
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
     },
     email: {
-        fontSize: 10, color: "#3a3a4a",
+        fontSize: 11, color: "var(--muted)",
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
     },
     divider: {
-        height: 1, background: "#111",
+        height: 1, background: "var(--raised)",
     },
     menuItem: {
         display: "block", width: "100%", textAlign: "left",
         background: "transparent", border: "none",
-        color: "#a0a0c0", fontSize: 12, padding: "10px 14px",
+        color: "var(--text-2)", fontSize: 12, padding: "10px 14px",
         cursor: "pointer", fontFamily: "inherit",
         transition: "background 0.1s",
     },
@@ -140,12 +140,12 @@ const s = {
     },
     confirmYes: {
         background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.3)",
-        color: "#f87171", fontSize: 10, padding: "3px 8px",
+        color: "var(--negative)", fontSize: 11, padding: "3px 8px",
         borderRadius: 2, cursor: "pointer", fontFamily: "inherit",
     },
     confirmNo: {
-        background: "none", border: "1px solid #222",
-        color: "#555", fontSize: 10, padding: "3px 8px",
+        background: "none", border: "1px solid var(--line-strong)",
+        color: "var(--text-2)", fontSize: 11, padding: "3px 8px",
         borderRadius: 2, cursor: "pointer", fontFamily: "inherit",
     },
 };

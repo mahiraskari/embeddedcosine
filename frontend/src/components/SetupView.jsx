@@ -154,17 +154,17 @@ export default function SetupView({ onDone, onBack }) {
                         <div key={label} style={styles.stepRow}>
                             <div style={{
                                 ...styles.stepDot,
-                                background: i <= step ? "#6366f1" : "#1e1e1e",
-                                border: `1px solid ${i <= step ? "#6366f1" : "#333"}`,
-                                color: i <= step ? "#fff" : "#555",
+                                background: i <= step ? "var(--accent)" : "#1e1e1e",
+                                border: `1px solid ${i <= step ? "var(--accent)" : "var(--line-strong)"}`,
+                                color: i <= step ? "var(--text)" : "var(--text-2)",
                             }}>
                                 {i < step ? "✓" : i + 1}
                             </div>
-                            <span style={{ ...styles.stepLabel, color: i <= step ? "#e2e2e2" : "#555" }}>
+                            <span style={{ ...styles.stepLabel, color: i <= step ? "var(--text)" : "var(--text-2)" }}>
                                 {label}
                             </span>
                             {i < STEPS.length - 1 && (
-                                <div style={{ ...styles.stepLine, background: i < step ? "#6366f1" : "#222" }} />
+                                <div style={{ ...styles.stepLine, background: i < step ? "var(--accent)" : "#222" }} />
                             )}
                         </div>
                     ))}
@@ -192,7 +192,7 @@ export default function SetupView({ onDone, onBack }) {
                                 <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10, alignItems: "stretch" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between" }}>
                                         <span style={styles.dropText}>Uploading…</span>
-                                        <span style={{ fontSize: 11, color: "#555" }}>{uploadProgress}%</span>
+                                        <span style={{ fontSize: 11, color: "var(--text-2)" }}>{uploadProgress}%</span>
                                     </div>
                                     <div style={styles.progressTrack}>
                                         <div style={{ ...styles.progressBar, width: `${uploadProgress}%` }} />
@@ -212,7 +212,7 @@ export default function SetupView({ onDone, onBack }) {
                 {step === 1 && uploadInfo && (
                     <div style={styles.section}>
                         <p style={styles.hint}>
-                            <b style={{ color: "#a5b4fc" }}>{uploadInfo.filename}</b> — {uploadInfo.total_rows.toLocaleString()} rows, {uploadInfo.columns.length} columns
+                            <b style={{ color: "var(--accent-text-hover)" }}>{uploadInfo.filename}</b> — {uploadInfo.total_rows.toLocaleString()} rows, {uploadInfo.columns.length} columns
                         </p>
 
                         <div style={styles.fieldGroup}>
@@ -243,7 +243,7 @@ export default function SetupView({ onDone, onBack }) {
                                                 disabled={isMedia}
                                                 style={{ ...styles.checkbox, cursor: isMedia ? "not-allowed" : "pointer" }}
                                             />
-                                            <span style={{ color: embedCols.includes(c) ? "#a5b4fc" : "#555", fontSize: 12, flex: 1 }}>{c}</span>
+                                            <span style={{ color: embedCols.includes(c) ? "var(--accent-text-hover)" : "var(--text-2)", fontSize: 12, flex: 1 }}>{c}</span>
                                             {isMedia && (
                                                 <span style={styles.mediaBadge}>{mediaType}</span>
                                             )}
@@ -294,8 +294,8 @@ export default function SetupView({ onDone, onBack }) {
                         {building ? (
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                                    <span style={{ fontSize: 11, color: "#555" }}>{stageLabel}</span>
-                                    <span style={{ fontSize: 11, color: "#444", fontVariantNumeric: "tabular-nums" }}>
+                                    <span style={{ fontSize: 11, color: "var(--text-2)" }}>{stageLabel}</span>
+                                    <span style={{ fontSize: 11, color: "var(--text-2)", fontVariantNumeric: "tabular-nums" }}>
                                         {Math.round(progress)}%
                                     </span>
                                 </div>
@@ -336,23 +336,23 @@ export default function SetupView({ onDone, onBack }) {
 const styles = {
     overlay: {
         position: "fixed", inset: 0,
-        background: "#07070d",
+        background: "var(--bg-deep)",
         display: "flex", alignItems: "center", justifyContent: "center",
     },
     card: {
-        background: "#0c0c14",
+        background: "var(--card)",
         border: "1px solid #1e1e30",
         borderRadius: 2,
         padding: "40px 44px",
         width: 540,
     },
     logo: {
-        fontSize: 20, fontWeight: 800, color: "#fff",
+        fontSize: 20, fontWeight: 600, color: "var(--text)",
         letterSpacing: "-0.5px", marginBottom: 4,
-        fontFamily: "monospace",
+        fontFamily: "var(--mono)",
     },
     sub: {
-        fontSize: 12, color: "#3a3a4a", marginBottom: 36,
+        fontSize: 12, color: "var(--muted)", marginBottom: 36,
         letterSpacing: "0.01em",
     },
     steps: {
@@ -376,10 +376,10 @@ const styles = {
         display: "flex", flexDirection: "column", gap: 16,
     },
     hint: {
-        fontSize: 13, color: "#888", lineHeight: 1.6,
+        fontSize: 13, color: "var(--text-2)", lineHeight: 1.6,
     },
     limitNote: {
-        fontSize: 11, color: "#555", fontFamily: "monospace",
+        fontSize: 11, color: "var(--text-2)", fontFamily: "var(--mono)",
     },
     dropzone: {
         border: "1px solid #1e1e30",
@@ -390,34 +390,34 @@ const styles = {
         transition: "border-color 0.15s",
     },
     dropIcon: {
-        fontSize: 22, color: "#6366f1",
+        fontSize: 22, color: "var(--accent-text)",
     },
     dropText: {
-        fontSize: 12, color: "#555", letterSpacing: "0.01em",
+        fontSize: 12, color: "var(--text-2)", letterSpacing: "0.01em",
     },
     fieldGroup: {
         display: "flex", flexDirection: "column", gap: 6,
     },
     label: {
-        fontSize: 11, fontWeight: 700, color: "#6366f1",
-        letterSpacing: "0.08em", textTransform: "uppercase",
+        fontSize: 11, fontWeight: 600, color: "var(--accent-text)",
+        
     },
     fieldHint: {
-        fontSize: 11, color: "#3a3a4a", marginBottom: 2,
+        fontSize: 11, color: "var(--muted)", marginBottom: 2,
     },
     select: {
-        background: "#08080f",
+        background: "var(--card)",
         border: "1px solid #1e1e30",
-        color: "#c4c4d4",
+        color: "var(--text)",
         borderRadius: 2,
         padding: "7px 10px",
         fontSize: 12,
         outline: "none",
     },
     nameInput: {
-        background: "#08080f",
+        background: "var(--card)",
         border: "1px solid #1e1e30",
-        color: "#e2e2e2",
+        color: "var(--text)",
         borderRadius: 2,
         padding: "7px 10px",
         fontSize: 12,
@@ -429,7 +429,7 @@ const styles = {
         display: "flex",
         flexDirection: "column",
         gap: 6,
-        background: "#08080f",
+        background: "var(--card)",
         border: "1px solid #1e1e30",
         borderRadius: 2,
         padding: "10px 12px",
@@ -443,59 +443,59 @@ const styles = {
         cursor: "pointer",
     },
     checkbox: {
-        accentColor: "#6366f1",
+        accentColor: "var(--accent)",
         width: 13,
         height: 13,
         cursor: "pointer",
     },
     mediaBadge: {
-        fontSize: 9,
-        fontWeight: 700,
-        letterSpacing: "0.08em",
-        textTransform: "uppercase",
-        color: "#3a3a5a",
-        background: "#111120",
-        border: "1px solid #222",
+        fontSize: 11,
+        fontWeight: 600,
+        
+       
+        color: "var(--muted)",
+        background: "var(--raised)",
+        border: "1px solid var(--line-strong)",
         borderRadius: 2,
         padding: "1px 5px",
         flexShrink: 0,
     },
     previewBox: {
-        background: "#08080f",
-        border: "1px solid #1a1a28",
+        background: "var(--card)",
+        border: "1px solid var(--line-strong)",
         borderRadius: 2,
         padding: "12px 14px",
         display: "flex", flexDirection: "column", gap: 10,
     },
     previewTitle: {
-        fontSize: 10, color: "#2a2a3a", marginBottom: 4,
-        textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700,
+        fontSize: 11, color: "var(--muted)", marginBottom: 4,
+        fontWeight: 600,
     },
     previewRow: {
         display: "flex", flexDirection: "column", gap: 3,
         borderBottom: "1px solid #111120", paddingBottom: 8,
     },
     previewName: {
-        fontSize: 12, fontWeight: 600, color: "#e2e2e2",
+        fontSize: 12, fontWeight: 600, color: "var(--text)",
     },
     previewText: {
-        fontSize: 11, color: "#444", lineHeight: 1.5,
+        fontSize: 11, color: "var(--text-2)", lineHeight: 1.5,
     },
     btn: {
-        background: "#6366f1",
+        background: "var(--accent)",
         border: "none",
-        color: "#fff",
+        color: "var(--text)",
         padding: "10px 22px",
         borderRadius: 2,
         fontSize: 12,
-        fontWeight: 700,
+        fontWeight: 600,
         letterSpacing: "0.03em",
         cursor: "pointer",
         transition: "background 0.15s",
         alignSelf: "flex-start",
     },
     progressTrack: {
-        background: "#111120",
+        background: "var(--raised)",
         borderRadius: 0,
         height: 4,
         width: "100%",
@@ -503,19 +503,19 @@ const styles = {
     },
     progressBar: {
         height: "100%",
-        background: "#6366f1",
+        background: "var(--accent)",
         transition: "width 0.4s ease",
     },
     progressIndeterminate: {
         height: "100%",
         width: "40%",
-        background: "#6366f1",
+        background: "var(--accent)",
         animation: "sweep 1.4s ease-in-out infinite",
     },
     backBtn: {
         background: "none",
         border: "none",
-        color: "#2a2a3a",
+        color: "var(--muted)",
         fontSize: 11,
         padding: "16px 0 0",
         cursor: "pointer",
@@ -526,8 +526,8 @@ const styles = {
     error: {
         marginTop: 12,
         fontSize: 12,
-        color: "#f87171",
-        background: "rgba(239,68,68,0.06)",
+        color: "var(--negative)",
+        background: "var(--negative-soft)",
         border: "1px solid rgba(239,68,68,0.15)",
         borderRadius: 2,
         padding: "8px 12px",

@@ -34,17 +34,17 @@ const FEATURES = [
 // Points only — no labels on individual dots, clusters labelled separately
 const DEMO_POINTS = [
     // Metroidvania cluster — top-left
-    { x: 14, y: 20, color: "#818cf8", name: "Hollow Knight" },
+    { x: 14, y: 20, color: "var(--accent-text)", name: "Hollow Knight" },
     { x: 19, y: 16, color: "#a78bfa", name: "Celeste" },
     { x: 11, y: 27, color: "#7c3aed", name: "Dead Cells" },
     { x: 18, y: 30, color: "#9333ea", name: "Ori" },
-    { x: 23, y: 23, color: "#818cf8", name: "Blasphemous" },
+    { x: 23, y: 23, color: "var(--accent-text)", name: "Blasphemous" },
     // Competitive FPS — top-right
     { x: 82, y: 14, color: "#ef4444", name: "Apex Legends" },
-    { x: 88, y: 20, color: "#f87171", name: "CS2" },
+    { x: 88, y: 20, color: "var(--negative)", name: "CS2" },
     { x: 78, y: 22, color: "#fca5a5", name: "Rust" },
     { x: 85, y: 28, color: "#dc2626", name: "Valorant" },
-    { x: 91, y: 13, color: "#f87171", name: "TF2" },
+    { x: 91, y: 13, color: "var(--negative)", name: "TF2" },
     // Survival / Sandbox — centre
     { x: 52, y: 48, color: "#34d399", name: "Stardew Valley" },
     { x: 59, y: 54, color: "#6ee7b7", name: "Terraria" },
@@ -69,8 +69,8 @@ const DEMO_POINTS = [
 ];
 
 const CLUSTERS = [
-    { x: 17, y: 9,  label: "Metroidvania",      color: "#818cf8", anchor: "middle" },
-    { x: 85, y: 7,  label: "Competitive FPS",   color: "#f87171", anchor: "middle" },
+    { x: 17, y: 9,  label: "Metroidvania",      color: "var(--accent-text)", anchor: "middle" },
+    { x: 85, y: 7,  label: "Competitive FPS",   color: "var(--negative)", anchor: "middle" },
     { x: 56, y: 39, label: "Survival / Sandbox", color: "#34d399", anchor: "middle" },
     { x: 21, y: 89, label: "Soulslike",         color: "#fbbf24", anchor: "middle" },
     { x: 79, y: 90, label: "Open World RPG",    color: "#c084fc", anchor: "middle" },
@@ -219,9 +219,9 @@ function DemoSearch() {
                         <div className="demo-results-label">Top matches · {field}</div>
                         <div className="demo-results">
                             {loading ? (
-                                <div style={{ color: "#333", fontSize: 12, padding: "12px 0" }}>Searching…</div>
+                                <div style={{ color: "var(--muted)", fontSize: 12, padding: "12px 0" }}>Searching…</div>
                             ) : results.length === 0 ? (
-                                <div style={{ color: "#333", fontSize: 12, padding: "12px 0" }}>No results. Is the backend running?</div>
+                                <div style={{ color: "var(--muted)", fontSize: 12, padding: "12px 0" }}>No results. Is the backend running?</div>
                             ) : results.map((r, i) => (
                                 <div key={r.Name} className="demo-result-row">
                                     <span className="demo-result-rank">{i + 1}</span>
@@ -282,32 +282,42 @@ function LiveDemo({ navigate }) {
 
     return (
         <div className="live-demo-wrap">
-            {/* Controls bar */}
+            {/* XP title bar */}
             <div className="live-demo-bar">
-                <div className="live-demo-bar-left">
-                    <span className="live-demo-bar-title">embeddedcosine_preview.exe</span>
+                <span className="live-demo-bar-title">embeddedcosine_preview.exe</span>
+                <div className="live-demo-xp-btns">
+                    <span className="xp-title-btn" aria-hidden="true">—</span>
+                    <span className="xp-title-btn" role="button" aria-label="Open full map"
+                        onClick={() => navigate("/map?demo=true")}>□</span>
+                    <span className="xp-title-btn xp-title-btn--close" aria-hidden="true">✕</span>
                 </div>
-                <div className="live-demo-bar-right">
-                    <form className="live-demo-search" onSubmit={handleSearch}>
-                        <input
-                            className="live-demo-search-input"
-                            type="text"
-                            placeholder="Search side effects…"
-                            value={query}
-                            onChange={e => setQuery(e.target.value)}
-                        />
-                        {searchResults && (
-                            <button type="button" className="live-demo-clear"
-                                onClick={() => { setQuery(""); setSearchResults(null); }}>✕</button>
-                        )}
-                        <button type="submit" className="live-demo-go" disabled={searching}>
-                            {searching ? "…" : "→"}
-                        </button>
-                    </form>
+            </div>
+
+            {/* Toolbar */}
+            <div className="live-demo-toolbar">
+                <form className="live-demo-search" onSubmit={handleSearch} role="search">
+                    <input
+                        className="live-demo-search-input"
+                        type="text"
+                        placeholder="Search a side effect, e.g. drowsiness"
+                        aria-label="Search side effects"
+                        value={query}
+                        onChange={e => setQuery(e.target.value)}
+                    />
+                    {searchResults && (
+                        <button type="button" className="live-demo-clear" aria-label="Clear search"
+                            onClick={() => { setQuery(""); setSearchResults(null); }}>✕</button>
+                    )}
+                    <button type="submit" className="live-demo-go" disabled={searching}>
+                        {searching ? "Searching" : "Search"}
+                    </button>
+                </form>
+                <div className="live-demo-toolbar-right">
                     {dims === 2 && (
                         <button
                             className={`live-demo-voronoi${showVoronoi ? " active" : ""}`}
                             type="button"
+                            aria-pressed={showVoronoi}
                             onClick={() => setShowVoronoi(v => !v)}
                         >
                             Voronoi
@@ -315,13 +325,8 @@ function LiveDemo({ navigate }) {
                     )}
                     <div className={`live-demo-dims live-demo-dims--${dims === 2 ? "left" : "right"}`}>
                         <span className="dim-toggle-slider" />
-                        <button onClick={() => setDims(2)}>2D</button>
-                        <button onClick={() => setDims(3)}>3D</button>
-                    </div>
-                    <div className="live-demo-xp-btns">
-                        <span className="live-demo-xp-btn">—</span>
-                        <span className="live-demo-xp-btn" style={{ cursor: "pointer" }} onClick={() => navigate("/map?demo=true")}>□</span>
-                        <span className="live-demo-xp-btn live-demo-xp-btn--close">✕</span>
+                        <button onClick={() => setDims(2)} aria-pressed={dims === 2}>2D</button>
+                        <button onClick={() => setDims(3)} aria-pressed={dims === 3}>3D</button>
                     </div>
                 </div>
             </div>
@@ -331,21 +336,20 @@ function LiveDemo({ navigate }) {
                 {!loaded ? (
                     <div className="live-demo-placeholder">
                         <div className="live-demo-spinner" />
-                        <p>LOADING</p>
+                        <p>Loading map</p>
                     </div>
                 ) : (
                     <MapView points={points} dims={dims} searchResults={searchResults} showVoronoi={showVoronoi} />
                 )}
             </div>
 
-            {/* Footer bar */}
+            {/* Status bar */}
             <div className="live-demo-footer">
-                <span style={{ color: "#4a4a5a", fontSize: 11, fontFamily: "monospace" }}>
-                    {points2d ? `${points2d.length.toLocaleString()} drugs` : ""}
+                <span className="live-demo-status">
+                    {points2d ? `${points2d.length.toLocaleString()} drugs · ${dims}D` : ""}
                 </span>
-                <button className="btn-primary" style={{ fontSize: 12, padding: "6px 14px" }}
-                    onClick={() => navigate("/map?demo=true")}>
-                    Open full map for extra features →
+                <button className="live-demo-open" onClick={() => navigate("/map?demo=true")}>
+                    Open full map
                 </button>
             </div>
         </div>
@@ -381,15 +385,18 @@ export default function LandingPage() {
 
             {/* Demo */}
             <section className="section section-wide" id="demo">
-                <p style={{ fontSize: 13, color: "#666", fontFamily: "monospace", marginBottom: 20, lineHeight: 1.7 }}>
-                    each point is a drug · the closer two points, the more similar their side effects · the map is built by comparing side effects across every drug · search a side effect to see which drugs match it most closely ·{" "}
-                    <span
-                        style={{ color: "#818cf8", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
-                        onClick={() => navigate("/about")}
-                    >
-                        learn more on the about page
-                    </span>
-                </p>
+                <div className="landing-intro">
+                    <div>
+                        <h1 className="landing-intro-title">Drugs, mapped by their side effects</h1>
+                        <p className="landing-intro-sub">
+                            Each point is a drug. The closer two points sit, the more similar their side effects.
+                            Search a side effect to see which drugs match it most closely.
+                        </p>
+                    </div>
+                    <button className="landing-intro-link" onClick={() => navigate("/about")}>
+                        How it works
+                    </button>
+                </div>
                 <LiveDemo navigate={navigate} />
             </section>
 

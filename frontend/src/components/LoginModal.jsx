@@ -64,8 +64,8 @@ export default function LoginModal({ onClose, onSuccess }) {
         <div style={s.backdrop}>
             <div style={s.card} onClick={e => e.stopPropagation()}>
                 <button style={s.closeBtn} onClick={onClose}
-                    onMouseEnter={e => e.target.style.color = "#a5b4fc"}
-                    onMouseLeave={e => e.target.style.color = "#333"}
+                    onMouseEnter={e => e.target.style.color = "var(--accent-text-hover)"}
+                    onMouseLeave={e => e.target.style.color = "var(--muted)"}
                 >✕</button>
 
                 <h2 style={s.title}>
@@ -81,8 +81,8 @@ export default function LoginModal({ onClose, onSuccess }) {
                 {mode !== "forgot" && <>
                     <div style={s.oauthRow}>
                         <button style={s.oauthBtn} onClick={() => signInWithProvider("google")}
-                            onMouseEnter={e => e.currentTarget.style.borderColor = "#6366f1"}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = "#1e1e2e"}
+                            onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = "var(--line-strong)"}
                         >
                             <svg width="14" height="14" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
                                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -93,8 +93,8 @@ export default function LoginModal({ onClose, onSuccess }) {
                             Google
                         </button>
                         <button style={s.oauthBtn} onClick={() => signInWithProvider("github")}
-                            onMouseEnter={e => e.currentTarget.style.borderColor = "#6366f1"}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = "#1e1e2e"}
+                            onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = "var(--line-strong)"}
                         >
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="#e2e2e2" style={{ flexShrink: 0 }}>
                                 <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
@@ -112,8 +112,8 @@ export default function LoginModal({ onClose, onSuccess }) {
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         style={s.input}
-                        onFocus={e => e.target.style.borderColor = "rgba(99,102,241,0.6)"}
-                        onBlur={e => e.target.style.borderColor = "#1e1e2e"}
+                        onFocus={e => e.target.style.borderColor = "var(--accent-line)"}
+                        onBlur={e => e.target.style.borderColor = "var(--line-strong)"}
                     />
                     {mode !== "forgot" && (
                         <input
@@ -122,8 +122,8 @@ export default function LoginModal({ onClose, onSuccess }) {
                             value={password}
                             onChange={e => setPassword(e.target.value)}
                             style={s.input}
-                            onFocus={e => e.target.style.borderColor = "rgba(99,102,241,0.6)"}
-                            onBlur={e => e.target.style.borderColor = "#1e1e2e"}
+                            onFocus={e => e.target.style.borderColor = "var(--accent-line)"}
+                            onBlur={e => e.target.style.borderColor = "var(--line-strong)"}
                         />
                     )}
 
@@ -164,79 +164,79 @@ const s = {
     },
     card: {
         width: 360,
-        background: "#0c0c14",
-        border: "1px solid #1a1a28",
+        background: "var(--card)",
+        border: "1px solid var(--line-strong)",
         borderRadius: 3,
         padding: "32px 28px",
-        boxShadow: "5px 5px 0px #000",
+        boxShadow: "var(--xp-shadow)",
         position: "relative",
-        fontFamily: '"Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        fontFamily: "var(--font)",
     },
     closeBtn: {
         position: "absolute", top: 10, right: 12,
         background: "none", border: "none",
-        color: "#444", fontSize: 18, cursor: "pointer",
+        color: "var(--text-2)", fontSize: 18, cursor: "pointer",
         lineHeight: 1, transition: "color 0.12s",
         padding: "4px 6px",
     },
     title: {
-        fontSize: 18, fontWeight: 700, color: "#fff",
+        fontSize: 18, fontWeight: 600, color: "var(--text)",
         letterSpacing: "-0.4px", marginBottom: 6,
     },
     subtitle: {
-        fontSize: 12, color: "#3a3a4a", marginBottom: 20,
+        fontSize: 12, color: "var(--muted)", marginBottom: 20,
     },
     oauthRow: {
         display: "flex", gap: 8, marginBottom: 16,
     },
     oauthBtn: {
         flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-        background: "#07070d", border: "1px solid #1e1e2e",
-        color: "#a0a0c0", fontSize: 12, fontWeight: 500,
+        background: "var(--bg-deep)", border: "1px solid var(--line-strong)",
+        color: "var(--text-2)", fontSize: 12, fontWeight: 500,
         height: 36, borderRadius: 3, cursor: "pointer",
         fontFamily: "inherit", transition: "border-color 0.15s",
     },
     divider: {
         display: "flex", alignItems: "center", gap: 10, marginBottom: 16,
         // Lines on either side of "or"
-        background: "linear-gradient(#2a2a3a, #2a2a3a) left center / calc(50% - 16px) 1px no-repeat, linear-gradient(#2a2a3a, #2a2a3a) right center / calc(50% - 16px) 1px no-repeat",
+        background: "linear-gradient(var(--line-strong), var(--line-strong)) left center / calc(50% - 16px) 1px no-repeat, linear-gradient(var(--line-strong), var(--line-strong)) right center / calc(50% - 16px) 1px no-repeat",
     },
     dividerText: {
-        fontSize: 11, color: "#2a2a3a",
+        fontSize: 11, color: "var(--muted)",
         margin: "0 auto",
     },
     form: {
         display: "flex", flexDirection: "column", gap: 10,
     },
     input: {
-        background: "#07070d",
-        border: "1px solid #1e1e2e",
-        color: "#e2e2e2",
+        background: "var(--bg-deep)",
+        border: "1px solid var(--line-strong)",
+        color: "var(--text)",
         padding: "0 12px",
         height: 36, borderRadius: 3,
         fontSize: 13, outline: "none",
         fontFamily: "inherit", transition: "border-color 0.15s",
     },
     btn: {
-        background: "#6366f1", border: "none",
-        color: "#fff", height: 36, borderRadius: 3,
+        background: "var(--accent)", border: "none",
+        color: "var(--text)", height: 36, borderRadius: 3,
         fontSize: 13, fontWeight: 600, cursor: "pointer",
         marginTop: 4, fontFamily: "inherit",
     },
     error: {
-        fontSize: 12, color: "#f87171", margin: 0,
+        fontSize: 12, color: "var(--negative)", margin: 0,
     },
     success: {
         fontSize: 12, color: "#34d399", margin: 0,
     },
     toggle: {
-        fontSize: 12, color: "#3a3a4a", marginTop: 20, textAlign: "center",
+        fontSize: 12, color: "var(--muted)", marginTop: 20, textAlign: "center",
     },
     toggleLink: {
-        color: "#6366f1", cursor: "pointer",
+        color: "var(--accent-text)", cursor: "pointer",
     },
     forgotLink: {
-        fontSize: 11, color: "#3a3a4a", cursor: "pointer",
+        fontSize: 11, color: "var(--muted)", cursor: "pointer",
         alignSelf: "flex-end", marginTop: -4,
         transition: "color 0.15s",
     },
