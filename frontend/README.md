@@ -1,16 +1,36 @@
-# React + Vite
+# embeddedcosine · frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite app for [embeddedcosine](../README.md): the landing page with the live demo map,
+the full map explorer (2D with Plotly, 3D with Three.js), dataset management, and sign-in through Supabase.
 
-Currently, two official plugins are available:
+## Run it
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+cp .env.example .env    # then fill in your Supabase URL + public key
+npm install
+npm run dev             # http://localhost:5173
+```
 
-## React Compiler
+The backend must be running for the map, search, and datasets (see the [root README](../README.md)).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Scripts
 
-## Expanding the ESLint configuration
+| Command | What it does |
+|---|---|
+| `npm run dev` | Dev server with hot reload |
+| `npm run build` | Production build into `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | ESLint |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Layout
+
+```
+src/
+  api/          client.js (calls the backend), errors.js (friendly error messages)
+  components/   Navbar, Footer, XPWindow (page windows), MapWindow (floating map windows),
+                MapView (2D/3D renderer), ResultsPanel, ClickPanel, SetupView (upload wizard), …
+  pages/        LandingPage, MapApp, ProjectsPage, SupportPage, ResetPasswordPage
+  index.css     design tokens + shared styles (one dark palette, XP window chrome)
+```
+
+`vercel.json` rewrites every path to `index.html` so client-side routes work on Vercel.
