@@ -9,6 +9,7 @@ from services.embedder import embed_texts
 from services.indexer import load_index, search
 from services.chunker import has_chunk_index, search_chunks
 from auth import get_user_id_optional
+from ratelimit import limit
 
 _SAFE_ID = re.compile(r"^[a-zA-Z0-9_-]+$")
 
@@ -58,7 +59,7 @@ def _resolve_dir(demo: bool, project_id: str | None, user_id: str | None) -> str
     raise HTTPException(status_code=400, detail="Provide demo=true or project_id")
 
 
-@router.post("/similarity")
+@router.post("/similarity", dependencies=[Depends(limit("similarity", 120, 60))])
 def compute_similarity(req: SimilarityRequest, user_id: str | None = Depends(get_user_id_optional)):
     if req.demo:
         data_dir = DEMO_DIR
@@ -94,7 +95,7 @@ def compute_similarity(req: SimilarityRequest, user_id: str | None = Depends(get
     return {"similarity": round(sim, 4)}
 
 
-@router.post("")
+@router.post("", dependencies=[Depends(limit("search", 60, 60))])
 def search_games(req: SearchRequest, user_id: str | None = Depends(get_user_id_optional)):
     if not req.query or not req.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")

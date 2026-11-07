@@ -7,8 +7,14 @@ export default function LoginModal({ onClose, onSuccess }) {
     const [mode, setMode]         = useState("signin");
     const [email, setEmail]       = useState("");
     const [password, setPassword] = useState("");
-    // a failed provider sign-in comes back as ?auth_error=… (see App.jsx)
-    const [error, setError]       = useState(() => new URLSearchParams(window.location.search).get("auth_error"));
+    // a failed provider sign-in leaves its reason in sessionStorage (see App.jsx); show it once
+    const [error, setError]       = useState(() => {
+        try {
+            const msg = sessionStorage.getItem("auth_error");
+            sessionStorage.removeItem("auth_error");
+            return msg;
+        } catch { return null; }
+    });
     const [message, setMessage]   = useState(null);
     const [loading, setLoading]   = useState(false);
 
@@ -22,7 +28,7 @@ export default function LoginModal({ onClose, onSuccess }) {
         if (!email.trim()) { setError("Enter your email address."); return; }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError("That doesn't look like a valid email."); return; }
         if (mode !== "forgot" && !password) { setError("Enter your password."); return; }
-        if (mode === "signup" && password.length < 6) { setError("Password must be at least 6 characters."); return; }
+        if (mode === "signup" && password.length < 8) { setError("Password must be at least 8 characters."); return; }
 
         setLoading(true);
 

@@ -13,6 +13,7 @@ from services.embedder import embed_texts, model as embedder_model
 from services.indexer import build_index
 from services.reducer import reduce
 from auth import get_user_id, get_user_id_from_token_param
+from ratelimit import limit
 
 router = APIRouter(prefix="/dataset", tags=["dataset"])
 
@@ -93,7 +94,7 @@ def _find_uploaded(user_id: str) -> str | None:
     return None
 
 
-@router.post("/upload")
+@router.post("/upload", dependencies=[Depends(limit("upload", 20, 3600))])
 async def upload_dataset(file: UploadFile = File(...), user_id: str = Depends(get_user_id)):
     ext = file.filename.rsplit(".", 1)[-1].lower()
     if ext not in ("csv", "json"):
@@ -214,7 +215,7 @@ def configure_dataset(req: ConfigRequest, user_id: str = Depends(get_user_id)):
     return {"status": "configured", "project_id": pid, **config}
 
 
-@router.get("/pipeline/stream")
+@router.get("/pipeline/stream", dependencies=[Depends(limit("pipeline", 10, 3600))])
 def run_pipeline_stream(user_id: str = Depends(get_user_id_from_token_param)):
     """SSE endpoint — streams real progress while the pipeline runs."""
 

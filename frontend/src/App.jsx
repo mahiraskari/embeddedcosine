@@ -18,12 +18,14 @@ function ProtectedRoute({ session, children }) {
 
 // If a sign-in (e.g. GitHub) failed, Supabase sends the reason back in the URL.
 // Pick it up once, clean the URL, and reopen the sign-in window showing the message.
+// The message is passed on in sessionStorage, not the URL, so a crafted link cannot show fake text.
 function readAuthError() {
     const params = new URLSearchParams(window.location.hash.slice(1) || window.location.search);
     let msg = params.get("error_description") || (params.get("error") && params.get("error").replace(/_/g, " "));
     try { msg = msg && decodeURIComponent(msg.replace(/\+/g, " ")); } catch { /* already decoded */ }
     if (!msg) return null;
-    window.history.replaceState(null, "", "/?login=true&auth_error=" + encodeURIComponent(msg));
+    try { sessionStorage.setItem("auth_error", "Sign-in failed: " + msg.slice(0, 200)); } catch { /* storage blocked */ }
+    window.history.replaceState(null, "", "/?login=true");
     return msg;
 }
 readAuthError();
