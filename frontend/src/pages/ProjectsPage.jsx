@@ -263,9 +263,8 @@ export default function ProjectsPage() {
                         Open a map, or add a new CSV or JSON file. Click a title to rename it.
                     </p>
                     {!loading && (
-                        <p style={{ ...styles.counter, color: projects.length >= 4 ? "var(--negative)" : "var(--muted)" }}>
-                            {projects.length} of 4 datasets used
-                            {projects.length >= 4 && " · delete one to add another"}
+                        <p style={styles.counter}>
+                            {projects.length} {projects.length === 1 ? "dataset" : "datasets"} · saved on this machine
                         </p>
                     )}
                 </header>
@@ -279,7 +278,7 @@ export default function ProjectsPage() {
                     </div>
                 ) : (
                     <div style={styles.grid}>
-                        {projects.length < 4 && <NewProjectCard onClick={() => setShowSetup(true)} />}
+                        <NewProjectCard onClick={() => setShowSetup(true)} />
                         {projects.map(p => (
                             <ProjectCard
                                 key={p.id}
@@ -314,6 +313,7 @@ const styles = {
     },
     counter: {
         margin: "12px 0 0",
+        color: "var(--muted)",
         fontFamily: "var(--mono)",
         fontSize: 14,
         fontVariantNumeric: "tabular-nums",

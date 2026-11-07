@@ -19,8 +19,8 @@ router = APIRouter(prefix="/dataset", tags=["dataset"])
 
 PROJECTS_DIR     = "data/projects"
 CONFIG_PATH      = "data/config.json"
-MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB hard limit
-MAX_ROWS         = 50_000             # prevent runaway embedding jobs
+MAX_UPLOAD_BYTES = None   # local branch: no file size limit
+MAX_ROWS         = None   # local branch: no row limit
 
 # Regex to detect media URLs — anchored before an optional query string
 _IMAGE_RE = re.compile(r'https?://.+\.(png|jpg|jpeg|gif|webp|svg)(\?.*)?$', re.IGNORECASE)
@@ -113,7 +113,7 @@ async def upload_dataset(file: UploadFile = File(...), user_id: str = Depends(ge
     with open(save_path, "wb") as f:
         while chunk := await file.read(65536):
             written += len(chunk)
-            if written > MAX_UPLOAD_BYTES:
+            if MAX_UPLOAD_BYTES and written > MAX_UPLOAD_BYTES:
                 f.close()
                 os.remove(save_path)
                 raise HTTPException(status_code=413, detail="File too large (25 MB max)")
@@ -132,13 +132,13 @@ async def upload_dataset(file: UploadFile = File(...), user_id: str = Depends(ge
             raise HTTPException(status_code=400, detail="Could not decode file — try saving it as UTF-8")
 
         total_rows = len(count_df)
-        if total_rows > MAX_ROWS:
+        if MAX_ROWS and total_rows > MAX_ROWS:
             os.remove(save_path)
             raise HTTPException(status_code=413, detail=f"File has too many rows ({total_rows:,}). Max is {MAX_ROWS:,}.")
     else:
         preview_df = _load_raw(save_path)
         total_rows = len(preview_df)
-        if total_rows > MAX_ROWS:
+        if MAX_ROWS and total_rows > MAX_ROWS:
             os.remove(save_path)
             raise HTTPException(status_code=413, detail=f"File has too many rows ({total_rows:,}). Max is {MAX_ROWS:,}.")
 
@@ -176,13 +176,7 @@ def configure_dataset(req: ConfigRequest, user_id: str = Depends(get_user_id)):
     if not req.embed_cols:
         raise HTTPException(status_code=400, detail="Select at least one column to embed")
 
-    user_dir = f"{PROJECTS_DIR}/{user_id}"
-    if os.path.exists(user_dir):
-        built = [d for d in os.listdir(user_dir)
-                 if os.path.isdir(f"{user_dir}/{d}")
-                 and os.path.exists(f"{user_dir}/{d}/coords_2d.npy")]
-        if len(built) >= 4:
-            raise HTTPException(status_code=400, detail="Project limit reached (4 max). Delete a project to create a new one.")
+    user_dir = f"{PROJECTS_DIR}/{user_id}"   # local branch: no limit on how many datasets you keep
 
     pid = str(uuid.uuid4())[:8]
     project_dir = f"{user_dir}/{pid}"

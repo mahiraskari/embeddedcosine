@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "../supabase";
-import AccountMenu from "./AccountMenu";
 
 /*
  * Header in three parts, with a hairline underneath aligned to the page content:
@@ -51,15 +49,8 @@ const CosineMark = ({ size = 32 }) => (
 export default function Navbar() {
     const navigate = useNavigate();
     const location = useLocation();
-    const [session, setSession] = useState(undefined);
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef(null);
-
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s ?? null));
-        return () => subscription.unsubscribe();
-    }, []);
 
     // close the menu on outside click or Esc
     useEffect(() => {
@@ -133,9 +124,7 @@ export default function Navbar() {
                                 </div>
                             </div>
                             <div className="start-menu-foot">
-                                {session
-                                    ? <button className="start-menu-item" role="menuitem" onClick={() => go("/datasets")}>My datasets</button>
-                                    : <button className="start-menu-item" role="menuitem" onClick={() => go("/?login=true")}>Sign in</button>}
+                                <button className="start-menu-item" role="menuitem" onClick={() => go("/datasets")}>My datasets</button>
                             </div>
                         </div>
                     )}
@@ -149,18 +138,11 @@ export default function Navbar() {
 
                 {/* right: the main action */}
                 <div className="site-nav-right">
-                    {session === null && (
-                        <button className="site-nav-action site-nav-signin" onClick={() => go("/?login=true")}>
-                            <span className="site-nav-label">Sign in</span>
-                        </button>
-                    )}
-                    {session !== undefined && (
-                        <button className={`site-nav-action site-nav-cta${session ? " is-signed-in" : ""}`} onClick={() => go("/datasets")} aria-label={session ? "My datasets" : "Map your data"}>
-                            <LayersIcon />
-                            <span className="site-nav-label">{session ? "My datasets" : "Map your data"}</span>
-                        </button>
-                    )}
-                    {session && <AccountMenu session={session} />}
+                    {/* local branch: no accounts, so this always opens your datasets */}
+                    <button className="site-nav-action site-nav-cta" onClick={() => go("/datasets")} aria-label="My datasets">
+                        <LayersIcon />
+                        <span className="site-nav-label">My datasets</span>
+                    </button>
                 </div>
             </div>
         </header>

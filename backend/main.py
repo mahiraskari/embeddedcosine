@@ -17,7 +17,7 @@ app = FastAPI(
 
 # Allow the React frontend (port 5173) to talk to this backend (port 8000).
 # Browsers block cross-origin requests by default — this lifts that restriction in dev.
-ALLOWED_ORIGINS = os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173").split(",")
+ALLOWED_ORIGINS = os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173,http://127.0.0.1:5173").split(",")
 
 app.add_middleware(
     CORSMiddleware,

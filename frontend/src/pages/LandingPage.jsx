@@ -1,8 +1,7 @@
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { searchGames, fetchDemoPoints } from "../api/client";
 import { OFFLINE_MESSAGE, friendlyError } from "../api/errors";
-import LoginModal from "../components/LoginModal";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import MapView from "../components/MapView";
@@ -253,9 +252,9 @@ function AboutWindows({ navigate }) {
         local: (
             <div className="prose">
                 <p>
-                    There is a local branch of this project made specifically to run it on your own machine
-                    without any of the account setup, server limits, or extra configuration.
-                    Follow the README commands in the link below to get started.
+                    You are running the local version of embeddedcosine. It works entirely on your own machine,
+                    with no account setup, no server limits, and no extra configuration. Your datasets are
+                    saved in backend/data/projects and never leave your computer.
                 </p>
                 <p>
                     No sign in, no file size limit, no rate limits. Everything runs on your CPU and is typically
@@ -296,9 +295,6 @@ function AboutWindows({ navigate }) {
 export default function LandingPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const [searchParams] = useSearchParams();
-    // The login modal is driven by the URL (/?login=true), so nav links and protected-route redirects both open it
-    const showLogin = searchParams.get("login") === "true";
 
     // Scroll to a section when arriving with a hash (/#how-it-works)
     useEffect(() => {
@@ -307,23 +303,14 @@ export default function LandingPage() {
         if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: "smooth", block: "start" }));
     }, [location.hash, location.key]);
 
-    const closeLogin = () => navigate("/", { replace: true });
-
     return (
         <div className="page landing">
-            {showLogin && (
-                <LoginModal
-                    onClose={closeLogin}
-                    onSuccess={() => navigate("/datasets")}
-                />
-            )}
-
             <Navbar />
 
             <main className="page-main">
                 <header className="landing-intro xp-welcome">
                     <div className="xp-welcome-inner">
-                    <p className="landing-byline">Free and open source</p>
+                    <p className="landing-byline">Free and open source · running on your machine</p>
                     <h1 className="landing-title">embeddedcosine</h1>
                     <p className="landing-slogan">Find anything in your data just by describing it</p>
                     <p className="landing-lede">
@@ -339,7 +326,7 @@ export default function LandingPage() {
                             Try the demo
                         </button>
                         <button className="text-link landing-intro-link" onClick={() => navigate("/datasets")}>
-                            Map your own data (free account)
+                            Map your own data
                         </button>
                     </div>
                     </div>

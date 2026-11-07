@@ -1,13 +1,12 @@
 # embeddedcosine · frontend
 
 React + Vite app for [embeddedcosine](../README.md): the landing page with the live demo map,
-the full map explorer (2D with Plotly, 3D with Three.js), dataset management, and sign-in through Supabase.
+the full map explorer (2D with Plotly, 3D with Three.js), and dataset management. Local version: no sign-in.
 
 ## Run it
 
 ```bash
-cp .env.example .env    # then fill in your Supabase URL + public key
-npm install
+npm install             # no .env needed; set VITE_API_URL only if the backend is not on localhost:8000
 npm run dev             # http://localhost:5173
 ```
 

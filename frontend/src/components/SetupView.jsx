@@ -41,11 +41,6 @@ export default function SetupView({ onDone, onBack }) {
         const file = e.target.files[0];
         if (!file) return;
         setError(null);
-        if (file.size > 25 * 1024 * 1024) {
-            setError("File exceeds the 25 MB limit. Try a smaller dataset or trim unused columns first.");
-            e.target.value = "";
-            return;
-        }
         setUploading(true);
         setUploadProgress(0);
         try {
@@ -194,7 +189,6 @@ export default function SetupView({ onDone, onBack }) {
                         <p style={styles.hint}>
                             Upload a CSV or JSON file to get started. Image, audio, and video URLs in columns are detected automatically.
                         </p>
-                        <p style={styles.limitNote}>25 MB file size limit.</p>
                         <div
                             style={styles.dropzone}
                             onClick={() => fileRef.current.click()}

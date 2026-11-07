@@ -1,34 +1,13 @@
 import axios from "axios";
-import { supabase } from "../supabase";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const api = axios.create({
     baseURL: API_URL,
-    timeout: 8000,
+    timeout: 30000,   // local branch: big local datasets can take a while
 });
 
-// Attach the Supabase JWT to every request so the backend can verify the user.
-// Demo endpoints ignore it if present; protected endpoints require it.
-api.interceptors.request.use(async (config) => {
-    const { data } = await supabase.auth.getSession();
-    const token = data?.session?.access_token;
-    if (token) {
-        config.headers["Authorization"] = `Bearer ${token}`;
-    }
-    return config;
-});
-
-// If any request comes back 401, the session has expired — send the user back to login.
-api.interceptors.response.use(
-    res => res,
-    err => {
-        if (err.response?.status === 401) {
-            window.location.href = "/?login=true";
-        }
-        return Promise.reject(err);
-    }
-);
+// Local branch: no accounts, so requests carry no login token.
 
 export async function fetchDemoPoints(dims = 2) {
     const response = await api.get(`/demo/points?dims=${dims}`);
@@ -82,7 +61,7 @@ export async function uploadDataset(file, onProgress) {
     form.append("file", file);
     const response = await api.post("/dataset/upload", form, {
         headers: { "Content-Type": "multipart/form-data" },
-        timeout: 60000,
+        timeout: 0,
         onUploadProgress: (e) => {
             if (e.total) onProgress?.(Math.round((e.loaded / e.total) * 100));
         },
@@ -91,7 +70,7 @@ export async function uploadDataset(file, onProgress) {
 }
 
 export async function configureDataset(name_col, embed_cols, project_name) {
-    const response = await api.post("/dataset/configure", { name_col, embed_cols, project_name });
+    const response = await api.post("/dataset/configure", { name_col, embed_cols, project_name }, { timeout: 0 });
     return response.data;
 }
 
@@ -102,9 +81,6 @@ export async function computeSimilarity(nameA, nameB, demo = false, projectId = 
     return response.data;
 }
 
-// EventSource doesn't support custom headers, so the token is passed as a query param for the SSE endpoint.
 export async function getPipelineStreamURL() {
-    const { data } = await supabase.auth.getSession();
-    const token = data?.session?.access_token ?? "";
-    return `${API_URL}/dataset/pipeline/stream?token=${token}`;
+    return `${API_URL}/dataset/pipeline/stream`;
 }
