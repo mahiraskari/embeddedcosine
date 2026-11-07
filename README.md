@@ -18,8 +18,8 @@ This is the **local** version. It is the same app as [embeddedcosine.com](https:
 
 ## What you need
 
-- [Python 3.12](https://www.python.org/downloads/) (3.10 or newer works)
-- [Node.js 20](https://nodejs.org/) or newer
+- [Python 3.12](https://www.python.org/downloads/) (3.11 also works; 3.10 and older will not install the packages)
+- [Node.js](https://nodejs.org/) 20.19 or newer (22 recommended)
 - About 2 GB of free disk space and 4 GB of RAM
 
 ## Setup
@@ -37,6 +37,8 @@ cd embeddedcosine
 cd backend
 python -m venv venv
 ```
+
+(On macOS/Linux use `python3` if `python` isn't found. On Windows use `py` if `python` opens the Microsoft Store.)
 
 Activate it:
 
