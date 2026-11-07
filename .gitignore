@@ -55,7 +55,7 @@ backend/model_cache/
 .cache/
 
 # ── Frontend build artifacts ──────────────────────────────
-frontend/node_modules/
+node_modules/
 frontend/dist/
 frontend/build/
 frontend/.env
