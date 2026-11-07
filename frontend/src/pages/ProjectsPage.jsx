@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchProjects, renameProject, deleteProject, fetchProjectPreview } from "../api/client";
+import { friendlyError } from "../api/errors";
 import SetupView from "../components/SetupView";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -222,9 +223,13 @@ export default function ProjectsPage() {
     const [projects, setProjects] = useState([]);
     const [showSetup, setShowSetup] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
 
     const load = () => {
-        fetchProjects().then(d => setProjects(d.projects)).finally(() => setLoading(false));
+        fetchProjects()
+            .then(d => { setProjects(d.projects); setLoadError(null); })
+            .catch(err => setLoadError(friendlyError(err, "Could not load your datasets.")))
+            .finally(() => setLoading(false));
     };
 
     useEffect(() => { load(); }, []);
@@ -267,6 +272,11 @@ export default function ProjectsPage() {
 
                 {loading ? (
                     <div style={styles.empty}>Loading…</div>
+                ) : loadError ? (
+                    <div className="server-error" role="alert">
+                        <span>{loadError}</span>
+                        <button className="btn btn-outline btn-sm" onClick={() => { setLoading(true); load(); }}>Try again</button>
+                    </div>
                 ) : (
                     <div style={styles.grid}>
                         {projects.length < 4 && <NewProjectCard onClick={() => setShowSetup(true)} />}

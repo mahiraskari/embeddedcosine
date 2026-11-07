@@ -5,6 +5,7 @@ import ResultsPanel from "../components/ResultsPanel";
 import ClickPanel from "../components/ClickPanel";
 import KeybindPanel from "../components/KeybindPanel";
 import { fetchProjectPoints, fetchDemoPoints, searchGames, fetchProjectMeta, fetchDemoMeta } from "../api/client";
+import { friendlyError } from "../api/errors";
 import "../App.css";
 
 export default function MapApp() {
@@ -29,6 +30,8 @@ export default function MapApp() {
     const [showKeys, setShowKeys]           = useState(false);
     const [embedCols, setEmbedCols]         = useState([]);
     const [projectName, setProjectName]     = useState("");
+    const [loadError, setLoadError]         = useState(null);
+    const [searchError, setSearchError]     = useState(null);
     const flyToRef                          = useRef(null);
 
     // The map fills the viewport, so hide the page scrollbar while it is open
@@ -59,7 +62,8 @@ export default function MapApp() {
                     setTimeout(() => flyToRef.current?.(pt), 400);
                 }
             }
-        }).finally(() => setLoading(false));
+        }).catch(err => setLoadError(friendlyError(err, "Could not load this map.")))
+          .finally(() => setLoading(false));
     }, [dims, isDemo, projectId]);
 
     const handlePointClick = (point) => {
@@ -75,8 +79,13 @@ export default function MapApp() {
 
     const runSearch = async (q, k) => {
         if (!q.trim()) { setSearchResults(null); return; }
-        const data = await searchGames(q.trim(), k, isDemo, isDemo ? null : projectId);
-        setSearchResults(data.results);
+        setSearchError(null);
+        try {
+            const data = await searchGames(q.trim(), k, isDemo, isDemo ? null : projectId);
+            setSearchResults(data.results);
+        } catch (err) {
+            setSearchError(friendlyError(err, "Search failed. Please try again."));
+        }
     };
 
     // Run the handed-over search once on arrival
@@ -108,6 +117,8 @@ export default function MapApp() {
     const backLabel = isDemo ? "Home" : "Datasets";
     const title     = isDemo ? "drug_side_effects.exe" : (projectName || "dataset");
     const status    = loading ? "Loading…"
+        : loadError ? loadError
+        : searchError ? searchError
         : searchResults ? `${searchResults.length} closest matches for “${query.trim()}”`
         : `${points.length.toLocaleString()} points · click a point for details, click a second to compare`;
 
@@ -170,6 +181,11 @@ export default function MapApp() {
                 <div className="map-container">
                     {loading ? (
                         <div className="loading"><span className="loading-spinner" />Loading map</div>
+                    ) : loadError ? (
+                        <div className="loading" role="alert">
+                            <span className="server-error-text">{loadError}</span>
+                            <button className="btn btn-outline btn-sm" onClick={() => window.location.reload()}>Try again</button>
+                        </div>
                     ) : (
                         <MapView
                             points={points}

@@ -1,6 +1,7 @@
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { searchGames, fetchDemoPoints } from "../api/client";
+import { OFFLINE_MESSAGE, friendlyError } from "../api/errors";
 import LoginModal from "../components/LoginModal";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -38,6 +39,7 @@ function LiveDemo({ navigate }) {
     const [lastQuery, setLastQuery]     = useState("");
     const [searchResults, setSearchResults] = useState(null);
     const [searching, setSearching]     = useState(false);
+    const [searchError, setSearchError] = useState(null);
     const [showInfo, setShowInfo]       = useState(true);
 
     // Prefetch both 2D and 3D in parallel so toggling dims doesn't trigger another round-trip
@@ -53,12 +55,14 @@ function LiveDemo({ navigate }) {
         const trimmed = q.trim();
         if (!trimmed) { setSearchResults(null); return; }
         setSearching(true);
+        setSearchError(null);
         try {
             const d = await searchGames(trimmed, 25, true);
             setSearchResults(d.results);
             setLastQuery(trimmed);
-        } catch {
+        } catch (err) {
             setSearchResults(null);
+            setSearchError(friendlyError(err, "Search failed. Please try again."));
         }
         setSearching(false);
     };
@@ -78,7 +82,9 @@ function LiveDemo({ navigate }) {
         navigate(`/map?${params.toString()}`);
     };
 
-    const status = !points2d
+    const status = searchError
+        ? searchError
+        : !points2d
         ? ""
         : searchResults
             ? `${searchResults.length} closest matches for “${lastQuery}”`
@@ -172,7 +178,7 @@ function LiveDemo({ navigate }) {
             <div className="live-demo-map">
                 {failed ? (
                     <div className="live-demo-placeholder">
-                        <p>The demo map couldn't load. The server may be offline.</p>
+                        <p>{OFFLINE_MESSAGE}</p>
                     </div>
                 ) : !loaded ? (
                     <div className="live-demo-placeholder">
@@ -186,7 +192,7 @@ function LiveDemo({ navigate }) {
 
             {/* Status bar */}
             <div className="live-demo-footer">
-                <span className="live-demo-status">{status}</span>
+                <span className={`live-demo-status${searchError ? " is-error" : ""}`} title={status}>{status}</span>
                 <button className="btn btn-light btn-sm" onClick={() => openFullMap()}>
                     Open full map
                 </button>

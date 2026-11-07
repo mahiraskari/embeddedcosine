@@ -717,6 +717,28 @@ textarea::placeholder {
     .setup-window .xp-window-body { padding: 20px; }
 }
 
+/* server / connection problems: shown honestly wherever data is loaded */
+.server-error {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+    padding: 14px 16px;
+    border: 1px solid rgba(229, 72, 77, 0.35);
+    border-radius: 6px;
+    background: var(--negative-soft);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.5;
+}
+.server-error-text {
+    max-width: 40rem;
+    color: var(--text-2);
+    text-align: center;
+    line-height: 1.5;
+}
+.live-demo-status.is-error { color: #ff8a8d; }
+
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 .site-footer {
     display: flex;

@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { uploadDataset, configureDataset, getPipelineStreamURL } from "../api/client";
+import { friendlyError } from "../api/errors";
 import Navbar from "./Navbar";
 import XPWindow from "./XPWindow";
 
@@ -61,7 +62,7 @@ export default function SetupView({ onDone, onBack }) {
             setProjectName(defaultName);
             setStep(1);
         } catch (err) {
-            setError(err.response?.data?.detail || err.message || "Upload failed — is the backend running?");
+            setError(friendlyError(err, "Upload failed. Please try again."));
         }
         setUploading(false);
     };
@@ -76,7 +77,7 @@ export default function SetupView({ onDone, onBack }) {
             await configureDataset(nameCol, embedCols, projectName.trim() || "Untitled");
             setStep(2);
         } catch (err) {
-            setError(err.response?.data?.detail || "Configuration failed");
+            setError(friendlyError(err, "Could not save those settings. Please try again."));
         }
     };
 
@@ -89,7 +90,14 @@ export default function SetupView({ onDone, onBack }) {
         if (progressRef.current) clearInterval(progressRef.current);
         if (esRef.current) esRef.current.close();
 
-        const streamUrl = await getPipelineStreamURL();
+        let streamUrl;
+        try {
+            streamUrl = await getPipelineStreamURL();
+        } catch (err) {
+            setError(friendlyError(err));
+            setBuilding(false);
+            return;
+        }
         const es = new EventSource(streamUrl);
         esRef.current = es;
 
@@ -133,7 +141,7 @@ export default function SetupView({ onDone, onBack }) {
         es.onerror = () => {
             es.close();
             if (progressRef.current) clearInterval(progressRef.current);
-            setError("Pipeline failed — check the backend logs");
+            setError("Building stopped. The server may be offline or restarting. Please try again in a few minutes.");
             setBuilding(false);
         };
     };
@@ -151,7 +159,9 @@ export default function SetupView({ onDone, onBack }) {
             <XPWindow
                 title="new_dataset.exe"
                 className="setup-window"
-                staticChrome
+                staticChrome={building}
+                collapsible={false}
+                onClose={onBack}
             >
                 <h1 style={styles.logo}>New dataset</h1>
                 <p style={styles.sub}>Turn a CSV or JSON file into a map you can search by meaning.</p>
