@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from services.embedder import embed_texts
 from services.indexer import load_index, search
+from services.chunker import has_chunk_index, search_chunks
 from auth import get_user_id_optional
 
 _SAFE_ID = re.compile(r"^[a-zA-Z0-9_-]+$")
@@ -31,7 +32,7 @@ def _sanitize_val(v):
 
 
 MAX_QUERY_LEN = 500
-MAX_K = 100
+MAX_K = 250
 
 class SearchRequest(BaseModel):
     query: str
@@ -116,13 +117,29 @@ def search_games(req: SearchRequest, user_id: str | None = Depends(get_user_id_o
         raise HTTPException(status_code=404, detail="No index found.")
 
     query_vector = embed_texts([req.query])[0]
-    index        = load_index(data_dir)
     metadata     = np.load(meta_path, allow_pickle=True)
 
+    MIN_SCORE = 0.01
+
+    # Chunk search: rank each row by its best-matching chunk and return that chunk as the reason.
+    # Used when the dataset has a chunk index (build_chunks.py); otherwise fall back to whole-row search.
+    if has_chunk_index(data_dir):
+        results = []
+        for row, score, chunk in search_chunks(data_dir, query_vector, req.k):
+            if score < MIN_SCORE:
+                break
+            if row >= len(metadata):
+                continue
+            item = {k: _sanitize_val(v) for k, v in dict(metadata[row]).items()}
+            item["score"] = round(score, 4)
+            item["match_text"] = chunk
+            results.append(item)
+        return {"query": req.query, "results": results}
+
+    index = load_index(data_dir)
     candidates = min(req.k * 30, len(metadata))
     scores, indices = search(index, query_vector, k=candidates)
 
-    MIN_SCORE = 0.01
     results = []
     for score, idx in zip(scores, indices):
         if idx < 0 or idx >= len(metadata):

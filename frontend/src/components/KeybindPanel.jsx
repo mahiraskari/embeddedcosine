@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import MapWindow from "./MapWindow";
 
 const SECTIONS = [
     {
@@ -25,120 +25,60 @@ const SECTIONS = [
             ["Click a point",   "Open details panel"],
             ["Click a second",  "Compare two points side by side with similarity score"],
         ],
-        last: true,
     },
 ];
 
 export default function KeybindPanel({ onClose }) {
-    const dragState = useRef(null);
-    const [pos, setPos] = useState({ x: 160, y: 56 });
-
-    useEffect(() => {
-        const onMove = (e) => {
-            if (!dragState.current) return;
-            setPos({
-                x: Math.max(0, dragState.current.origX + e.clientX - dragState.current.startX),
-                y: Math.max(0, dragState.current.origY + e.clientY - dragState.current.startY),
-            });
-        };
-        const onUp = () => { dragState.current = null; };
-        window.addEventListener("mousemove", onMove);
-        window.addEventListener("mouseup", onUp);
-        window.addEventListener("mouseleave", onUp);
-        return () => {
-            window.removeEventListener("mousemove", onMove);
-            window.removeEventListener("mouseup", onUp);
-            window.removeEventListener("mouseleave", onUp);
-        };
-    }, []);
-
     return (
-        <div data-panel style={{ ...s.panel, left: pos.x, top: pos.y }}>
-            {/* Header */}
-            <div
-                onMouseDown={(e) => {
-                    if (e.button !== 0) return;
-                    e.preventDefault();
-                    dragState.current = { startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y };
-                }}
-                style={s.header}
-            >
-                <span style={s.headerLabel}>Controls</span>
-                <button
-                    onClick={onClose}
-                    onMouseDown={e => e.stopPropagation()}
-                    style={s.closeBtn}
-                    onMouseEnter={e => e.target.style.color = "var(--accent-text-hover)"}
-                    onMouseLeave={e => e.target.style.color = "var(--muted)"}
-                >✕</button>
-            </div>
-
-            {/* Content */}
-            <div style={s.body}>
-                {SECTIONS.map(sec => (
-                    <div key={sec.title} style={{ ...s.section, borderBottom: sec.last ? "none" : "1px solid var(--line)" }}>
-                        <div style={s.sectionTitle}>{sec.title}</div>
+        <MapWindow id="controls" title="controls.txt" onClose={onClose} anchor="center" defaultWidth={420} defaultHeight={520} offset={{ x: 16, y: 48 }}>
+            <div className="map-window-scroll" style={{ padding: "8px 0 12px" }}>
+                {SECTIONS.map((sec, i) => (
+                    <section key={sec.title} style={{ ...s.section, borderBottom: i === SECTIONS.length - 1 ? "none" : "1px solid var(--line)" }}>
+                        <h3 style={s.sectionTitle}>{sec.title}</h3>
                         {sec.rows.map(([key, desc]) => (
                             <div key={key} style={s.row}>
-                                <span style={s.key}>{key}</span>
+                                <span style={s.key}><kbd style={s.kbd}>{key}</kbd></span>
                                 <span style={s.desc}>{desc}</span>
                             </div>
                         ))}
-                    </div>
+                    </section>
                 ))}
             </div>
-        </div>
+        </MapWindow>
     );
 }
 
 const s = {
-    panel: {
-        position: "absolute",
-        zIndex: 50,
-        background: "#0c0c16",
-        border: "1px solid #1e1e30",
-        borderRadius: 3,
-        boxShadow: "var(--xp-shadow)",
-        userSelect: "none",
-        width: 320,
-    },
-    header: {
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "9px 14px 8px",
-        borderBottom: "1px solid var(--line-strong)",
-        cursor: "grab",
-    },
-    headerLabel: {
-        fontSize: 11, fontWeight: 600, 
-        color: "var(--accent-text)"
-    },
-    closeBtn: {
-        background: "none", border: "none", color: "var(--muted)",
-        fontSize: 14, cursor: "pointer", padding: "0 2px",
-        lineHeight: 1, transition: "color 0.12s",
-    },
-    body: {
-        padding: "10px 0 12px",
-        maxHeight: 420, overflowY: "auto", scrollbarWidth: "none",
-    },
     section: {
-        padding: "6px 14px 10px",
-        borderBottom: "1px solid var(--line)",
+        padding: "10px 16px 12px",
     },
     sectionTitle: {
-        fontSize: 11, fontWeight: 600, color: "var(--muted)",
-        
-        marginBottom: 8,
+        margin: "0 0 8px",
+        fontSize: 13, fontWeight: 500, color: "var(--text)",
     },
     row: {
-        display: "flex", alignItems: "baseline", gap: 10,
-        padding: "3px 0",
+        display: "grid",
+        gridTemplateColumns: "150px 1fr",
+        alignItems: "baseline",
+        gap: 12,
+        padding: "4px 0",
     },
     key: {
-        fontSize: 11, color: "var(--text)", fontWeight: 500,
-        width: 110, flexShrink: 0,
+        minWidth: 0,
+    },
+    kbd: {
+        display: "inline-block",
+        fontFamily: "var(--mono)",
+        fontSize: 12,
+        color: "var(--text)",
+        padding: "1px 6px",
+        background: "var(--raised)",
+        border: "1px solid var(--line-strong)",
+        borderBottomWidth: 2,
+        borderRadius: 4,
+        whiteSpace: "nowrap",
     },
     desc: {
-        fontSize: 11, color: "var(--muted)", lineHeight: 1.4,
+        fontSize: 13, color: "var(--text-2)", lineHeight: 1.5,
     },
 };

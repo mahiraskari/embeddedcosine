@@ -1,11 +1,13 @@
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { computeSimilarity } from "../api/client";
+import MapWindow from "./MapWindow";
 
-const SKIP_KEYS = new Set(["x", "y", "z", "score"]);
+const SKIP_KEYS = new Set(["x", "y", "z", "score", "match_text"]);
 
 // Detect media URLs — either by file extension or known image CDN hostnames
 const IMAGE_RE = /^https?:\/\/.+\.(png|jpg|jpeg|gif|webp|svg)(\?.*)?$/i;
 const IMAGE_HOST_RE = /^https?:\/\/(lh\d+\.googleusercontent\.com|encrypted-tbn\d+\.gstatic\.com|[\w.-]+\.gstatic\.com)\//i;
+const LINK_RE = /^https?:\/\/\S+$/i;
 
 function MediaValue({ val }) {
     const str = String(val).trim();
@@ -16,28 +18,27 @@ function MediaValue({ val }) {
                 alt=""
                 style={{
                     maxWidth: "100%",
-                    maxHeight: 180,
-                    borderRadius: 2,
+                    maxHeight: 240,
+                    borderRadius: 4,
                     objectFit: "contain",
                     display: "block",
                     marginTop: 4,
-                    background: "var(--card)",
+                    background: "var(--bg-deep)",
                 }}
                 loading="lazy"
                 onError={e => {
                     e.target.replaceWith(Object.assign(document.createElement("span"), {
-                        textContent: str.length > 400 ? str.slice(0, 400) + "…" : str,
-                        style: "font-size:11px;color:#a0a0c0;line-height:1.5;word-break:break-word",
+                        textContent: str,
+                        style: "font-size:13px;color:#a3a9b8;line-height:1.55;word-break:break-word",
                     }));
                 }}
             />
         );
     }
-    return (
-        <span style={{ fontSize: 11, color: "var(--text-2)", lineHeight: 1.5, flex: 1, wordBreak: "break-word", cursor: "text" }}>
-            {str.length > 400 ? str.slice(0, 400) + "…" : str}
-        </span>
-    );
+    if (LINK_RE.test(str)) {
+        return <a href={str} target="_blank" rel="noopener noreferrer" className="text-link" style={{ wordBreak: "break-all" }}>{str}</a>;
+    }
+    return <span>{str}</span>;
 }
 
 function MetaRows({ point, embedCols = [] }) {
@@ -52,187 +53,150 @@ function MetaRows({ point, embedCols = [] }) {
         return 0;
     });
     return (
-        <>
+        <dl style={{ margin: 0 }}>
             {entries.map(([k, v]) => {
                 const isEmbed = embedSet.has(k);
                 return (
                     <div key={k} style={{ ...s.row, background: isEmbed ? "var(--accent-soft)" : "transparent" }}>
-                        <span style={{ ...s.key, color: isEmbed ? "var(--accent-text)" : "var(--muted)" }}>
+                        <dt style={{ ...s.key, color: isEmbed ? "var(--accent-text)" : "var(--muted)" }} title={k}>
                             {k}
-                        </span>
-                        <span style={{ ...s.val, color: isEmbed ? "#c4c4f0" : "var(--text-2)" }}>
-                            {v == null
+                        </dt>
+                        <dd style={{ ...s.val, color: isEmbed ? "var(--text)" : "var(--text-2)" }}>
+                            {v == null || v === ""
                                 ? <span style={{ color: "var(--muted)" }}>—</span>
                                 : <MediaValue val={v} />}
-                        </span>
+                        </dd>
                     </div>
                 );
             })}
-        </>
+        </dl>
     );
 }
 
-export default function ClickPanel({ selected, onClose, demo, projectId, embedCols = [] }) {
-    const dragState = useRef(null);
-    const [pos, setPos]           = useState({ x: 320, y: 80 });
+export default function ClickPanel({ selected, onClose, onRemove, demo, projectId, embedCols = [] }) {
     const [similarity, setSimilarity] = useState(null);
 
     useEffect(() => {
         // Only fetch when exactly two points are selected — single selection doesn't need it
-        if (selected.length !== 2) { setSimilarity(null); return; }
+        if (selected.length !== 2) return;
+        let live = true;
         computeSimilarity(selected[0].Name, selected[1].Name, demo, projectId)
-            .then(d => setSimilarity(d.similarity))
-            .catch(() => setSimilarity(null));
-    }, [selected]);
-
-    useEffect(() => {
-        const onMove = (e) => {
-            if (!dragState.current) return;
-            setPos({
-                x: Math.max(0, dragState.current.origX + e.clientX - dragState.current.startX),
-                y: Math.max(0, dragState.current.origY + e.clientY - dragState.current.startY),
-            });
-        };
-        const onUp = () => { dragState.current = null; };
-        window.addEventListener("mousemove", onMove);
-        window.addEventListener("mouseup", onUp);
-        window.addEventListener("mouseleave", onUp);
-        return () => {
-            window.removeEventListener("mousemove", onMove);
-            window.removeEventListener("mouseup", onUp);
-            window.removeEventListener("mouseleave", onUp);
-        };
-    }, []);
+            .then(d => live && setSimilarity(d.similarity))
+            .catch(() => live && setSimilarity(null));
+        return () => { live = false; setSimilarity(null); };
+    }, [selected, demo, projectId]);
 
     if (!selected || selected.length === 0) return null;
 
     const isCompare = selected.length === 2;
 
-    return (
-        <div data-panel style={{ ...s.panel, left: pos.x, top: pos.y, width: isCompare ? 500 : 290 }}>
-            {/* Header */}
-            <div
-                onMouseDown={(e) => {
-                    if (e.button !== 0) return;
-                    e.preventDefault();
-                    dragState.current = { startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y };
-                }}
-                style={s.header}
-            >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={s.headerLabel}>{isCompare ? "Compare" : "Details"}</span>
-                    {isCompare && similarity !== null && (
-                        // Highlight the badge when the two items are strongly similar (>0.7 cosine)
-                        <span style={{
-                            ...s.simBadge,
-                            background: similarity > 0.7 ? "var(--accent-soft)" : "rgba(255,255,255,0.04)",
-                            color: similarity > 0.7 ? "var(--accent-text-hover)" : "var(--text-2)",
-                            borderColor: similarity > 0.7 ? "var(--accent-line)" : "var(--line-strong)",
-                        }}>
-                            similarity {similarity.toFixed(2)}
-                        </span>
-                    )}
-                </div>
-                <button
-                    onClick={onClose}
-                    onMouseDown={e => e.stopPropagation()}
-                    style={s.closeBtn}
-                    onMouseEnter={e => e.target.style.color = "var(--accent-text-hover)"}
-                    onMouseLeave={e => e.target.style.color = "var(--muted)"}
-                >✕</button>
-            </div>
+    const badge = isCompare && similarity !== null && (
+        // Highlight the badge when the two items are strongly similar (>0.7 cosine)
+        <span style={{
+            ...s.simBadge,
+            background: similarity > 0.7 ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.2)",
+        }}>
+            similarity {similarity.toFixed(2)}
+        </span>
+    );
 
-            {/* Content */}
+    return (
+        <MapWindow
+            id="details"
+            title={isCompare ? "compare.exe" : `${selected[0].Name}.txt`}
+            titleExtra={badge}
+            onClose={onClose}
+            anchor="right"
+            defaultWidth={isCompare ? 760 : 420}
+            defaultHeight={isCompare ? 560 : 520}
+            minWidth={isCompare ? 420 : 260}
+        >
             {isCompare ? (
                 <div style={s.compareGrid}>
-                    <div style={s.compareCol}>
-                        <div style={s.colName}>{selected[0].Name}</div>
-                        <div style={s.scroll}>
-                            <MetaRows point={selected[0]} embedCols={embedCols} />
+                    {[0, 1].map(i => (
+                        <div key={i} style={{ ...s.compareCol, borderLeft: i ? "1px solid var(--line)" : "none" }}>
+                            <div style={s.colName}>
+                                <span style={s.colNameText} title={selected[i].Name}>{selected[i].Name}</span>
+                                {onRemove && (
+                                    <span
+                                        className="xp-title-btn xp-title-btn--close xp-title-btn--sm"
+                                        role="button"
+                                        tabIndex={0}
+                                        title={`Remove ${selected[i].Name} and keep ${selected[1 - i].Name}`}
+                                        aria-label={`Remove ${selected[i].Name} from the comparison`}
+                                        onClick={() => onRemove(i)}
+                                        onKeyDown={e => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onRemove(i))}
+                                    >✕</span>
+                                )}
+                            </div>
+                            <div className="map-window-scroll" style={{ padding: "4px 0 12px" }}>
+                                <MetaRows point={selected[i]} embedCols={embedCols} />
+                            </div>
                         </div>
-                    </div>
-                    <div style={s.divider} />
-                    <div style={s.compareCol}>
-                        <div style={s.colName}>{selected[1].Name}</div>
-                        <div style={s.scroll}>
-                            <MetaRows point={selected[1]} embedCols={embedCols} />
-                        </div>
-                    </div>
+                    ))}
                 </div>
             ) : (
-                <div style={s.scroll}>
+                <div className="map-window-scroll" style={{ padding: "4px 0 12px" }}>
                     <MetaRows point={selected[0]} embedCols={embedCols} />
                 </div>
             )}
-        </div>
+        </MapWindow>
     );
 }
 
 const s = {
-    panel: {
-        position: "absolute",
-        zIndex: 50,
-        background: "#0c0c16",
-        border: "1px solid #1e1e30",
-        borderRadius: 3,
-        boxShadow: "var(--xp-shadow)",
-        userSelect: "none",
-    },
-    header: {
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "9px 14px 8px",
-        borderBottom: "1px solid var(--line-strong)",
-        cursor: "grab",
-        userSelect: "none",
-    },
-    headerLabel: {
-        fontSize: 11, fontWeight: 600, 
-        color: "var(--accent-text)"
-    },
     simBadge: {
-        fontSize: 11, fontWeight: 600, padding: "2px 7px",
-        borderRadius: 2, border: "1px solid",
+        flexShrink: 0,
+        fontFamily: "var(--mono)",
+        fontSize: 11,
+        color: "#fff",
+        padding: "2px 8px",
+        borderRadius: 4,
+        border: "1px solid rgba(255,255,255,0.35)",
         fontVariantNumeric: "tabular-nums",
-    },
-    closeBtn: {
-        background: "none", border: "none", color: "var(--muted)",
-        fontSize: 14, cursor: "pointer", padding: "0 2px",
-        lineHeight: 1, transition: "color 0.12s",
+        whiteSpace: "nowrap",
     },
     compareGrid: {
         display: "flex",
+        flex: 1,
+        minHeight: 0,
     },
     compareCol: {
-        flex: 1, minWidth: 0,
+        flex: 1,
+        minWidth: 0,
+        display: "flex",
+        flexDirection: "column",
     },
     colName: {
-        fontSize: 11, fontWeight: 600, color: "var(--text)",
-        padding: "8px 14px 6px",
+        flexShrink: 0,
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "8px 8px 8px 16px",
         borderBottom: "1px solid var(--line)",
+        background: "var(--raised)",
+    },
+    colNameText: {
+        flex: 1, minWidth: 0,
+        fontSize: 14, fontWeight: 500, color: "var(--text)",
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
     },
-    divider: {
-        width: 1, background: "rgba(255,255,255,0.05)", flexShrink: 0,
-    },
-    scroll: {
-        maxHeight: 340, overflowY: "auto", scrollbarWidth: "none",
-        padding: "6px 0 8px",
-        userSelect: "text",
-    },
     row: {
-        display: "flex", gap: 8,
-        padding: "4px 14px",
-        alignItems: "flex-start",
+        display: "grid",
+        gridTemplateColumns: "minmax(100px, min(32%, 200px)) minmax(0, 1fr)",
+        gap: 12,
+        padding: "6px 16px",
+        alignItems: "start",
     },
     key: {
-        fontSize: 11, color: "var(--muted)", fontWeight: 600,
-        
-        flexShrink: 0, width: 90, paddingTop: 1,
+        fontFamily: "var(--mono)",
+        fontSize: 12,
+        paddingTop: 2,
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         userSelect: "none",
     },
     val: {
-        fontSize: 11, color: "var(--text-2)", lineHeight: 1.5, flex: 1,
+        margin: 0,
+        maxWidth: "90ch",          // keep long text readable when the window is maximized
+        fontSize: 13, lineHeight: 1.55,
         wordBreak: "break-word", cursor: "text",
     },
 };

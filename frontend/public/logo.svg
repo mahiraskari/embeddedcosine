@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect width="48" height="48" rx="8" fill="#05050a"/>
+  <!-- origin dot -->
+  <circle cx="10" cy="38" r="2" fill="#555"/>
+  <!-- vector 1 - indigo, going up-right -->
+  <line x1="10" y1="38" x2="38" y2="10" stroke="#818cf8" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="38" cy="10" r="2.5" fill="#818cf8"/>
+  <!-- vector 2 - teal, going right -->
+  <line x1="10" y1="38" x2="42" y2="32" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="42" cy="32" r="2.5" fill="#38bdf8"/>
+  <!-- arc between vectors, radius 12 from origin -->
+  <path d="M 18.5 29.5 A 12 12 0 0 1 21.8 35.8" stroke="#a78bfa" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+</svg>

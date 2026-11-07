@@ -62,13 +62,30 @@ export default function LoginModal({ onClose, onSuccess }) {
     return (
         // Backdrop — only X button closes it
         <div style={s.backdrop}>
-            <div style={s.card} onClick={e => e.stopPropagation()}>
-                <button style={s.closeBtn} onClick={onClose}
-                    onMouseEnter={e => e.target.style.color = "var(--accent-text-hover)"}
-                    onMouseLeave={e => e.target.style.color = "var(--muted)"}
-                >✕</button>
+            <div style={s.card} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="login-title">
+                {/* XP title bar */}
+                <div style={s.titleBar}>
+                    <span style={s.titleText}>
+                        {mode === "signin" ? "sign_in.exe" : mode === "signup" ? "create_account.exe" : "reset_password.exe"}
+                    </span>
+                    <div className="xp-window-btns">
+                        <span className="xp-title-btn" aria-hidden="true">—</span>
+                        <span className="xp-title-btn" aria-hidden="true">□</span>
+                        <span
+                            className="xp-title-btn xp-title-btn--close"
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Close"
+                            title="Close"
+                            onClick={onClose}
+                            onKeyDown={e => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onClose())}
+                        >✕</span>
+                    </div>
+                </div>
 
-                <h2 style={s.title}>
+                <div style={s.body}>
+
+                <h2 id="login-title" style={s.title}>
                     {mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Reset password"}
                 </h2>
                 <p style={s.subtitle}>
@@ -76,6 +93,11 @@ export default function LoginModal({ onClose, onSuccess }) {
                    : mode === "signup" ? "Create an account to start mapping your data."
                    : "Enter your email and we'll send you a reset link."}
                 </p>
+                {mode !== "forgot" && (
+                    <p style={{ margin: "-12px 0 20px", fontSize: 12, color: "var(--muted)" }}>
+                        Free account · up to 4 datasets · 25 MB per file
+                    </p>
+                )}
 
                 {/* OAuth buttons — only on signin/signup */}
                 {mode !== "forgot" && <>
@@ -150,6 +172,7 @@ export default function LoginModal({ onClose, onSuccess }) {
                         <>Already have an account? <span style={s.toggleLink} onClick={() => switchMode("signin")}>Sign in</span></>
                     )}
                 </p>
+                </div>
             </div>
         </div>
     );
@@ -163,21 +186,26 @@ const s = {
         backdropFilter: "blur(4px)",
     },
     card: {
-        width: 360,
+        width: "min(380px, calc(100vw - 32px))",
         background: "var(--card)",
-        border: "1px solid var(--line-strong)",
-        borderRadius: 3,
-        padding: "32px 28px",
+        border: "1px solid #1e4ca8",
+        borderRadius: "8px 8px 4px 4px",
+        overflow: "hidden",
         boxShadow: "var(--xp-shadow)",
         position: "relative",
         fontFamily: "var(--font)",
     },
-    closeBtn: {
-        position: "absolute", top: 10, right: 12,
-        background: "none", border: "none",
-        color: "var(--text-2)", fontSize: 18, cursor: "pointer",
-        lineHeight: 1, transition: "color 0.12s",
-        padding: "4px 6px",
+    titleBar: {
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+        minHeight: 30, padding: "4px 4px 4px 10px",
+        background: "var(--xp-title)", userSelect: "none",
+    },
+    titleText: {
+        fontFamily: "var(--mono)", fontSize: 12, fontWeight: 500, color: "#fff",
+        textShadow: "0 1px 0 rgba(0,0,0,0.35)",
+    },
+    body: {
+        padding: "24px 28px 28px",
     },
     title: {
         fontSize: 18, fontWeight: 600, color: "var(--text)",
@@ -219,7 +247,7 @@ const s = {
     },
     btn: {
         background: "var(--accent)", border: "none",
-        color: "var(--text)", height: 36, borderRadius: 3,
+        color: "#fff", height: 36, borderRadius: 4,
         fontSize: 13, fontWeight: 600, cursor: "pointer",
         marginTop: 4, fontFamily: "inherit",
     },
@@ -227,7 +255,7 @@ const s = {
         fontSize: 12, color: "var(--negative)", margin: 0,
     },
     success: {
-        fontSize: 12, color: "#34d399", margin: 0,
+        fontSize: 12, color: "var(--positive)", margin: 0,
     },
     toggle: {
         fontSize: 12, color: "var(--muted)", marginTop: 20, textAlign: "center",

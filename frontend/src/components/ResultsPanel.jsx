@@ -1,176 +1,100 @@
-import { useRef, useState, useEffect } from "react";
+import MapWindow from "./MapWindow";
 
-const COLORS = ["#818cf8","#a78bfa","#c084fc","#e879f9","#34d399","#6ee7b7","#38bdf8","#fbbf24","#f87171","#fb923c"];
+// How many matches the search can return (backend caps at 250)
+const K_OPTIONS = [10, 25, 50, 100, 250];
 
-export default function ResultsPanel({ results, onClose, onFlyTo, topK = 10, onTopKChange }) {
-    const [kInput, setKInput] = useState(String(topK));
-
-    const commitK = () => {
-        const parsed = parseInt(kInput, 10);
-        if (isNaN(parsed) || parsed < 1) { setKInput(String(topK)); return; }
-        const clamped = Math.min(50, Math.max(1, parsed));
-        setKInput(String(clamped));
-        if (clamped !== topK) onTopKChange?.(clamped);
-    };
-    const panelRef  = useRef(null);
-    const dragState = useRef(null);
-    const [pos, setPos] = useState({ x: 24, y: 80 }); // initial position from top-left of map-container
-
-    // Drag logic
-    useEffect(() => {
-        const onMove = (e) => {
-            if (!dragState.current) return;
-            const dx = e.clientX - dragState.current.startX;
-            const dy = e.clientY - dragState.current.startY;
-            setPos({
-                x: Math.max(0, dragState.current.origX + dx),
-                y: Math.max(0, dragState.current.origY + dy),
-            });
-        };
-        const onUp = () => { dragState.current = null; };
-        window.addEventListener("mousemove", onMove);
-        window.addEventListener("mouseup", onUp);
-        window.addEventListener("mouseleave", onUp);
-        return () => {
-            window.removeEventListener("mousemove", onMove);
-            window.removeEventListener("mouseup", onUp);
-            window.removeEventListener("mouseleave", onUp);
-        };
-    }, []);
-
-    const onDragStart = (e) => {
-        if (e.button !== 0) return;
-        e.preventDefault(); // prevent text selection while dragging the panel
-        dragState.current = {
-            startX: e.clientX,
-            startY: e.clientY,
-            origX:  pos.x,
-            origY:  pos.y,
-        };
-    };
-
+export default function ResultsPanel({ results, onClose, onFlyTo, topK = 25, onTopKChange }) {
     if (!results || results.length === 0) return null;
 
     return (
-        <div
-            ref={panelRef}
-            data-panel
-            style={{
-                position:  "absolute",
-                left:      pos.x,
-                top:       pos.y,
-                zIndex:    50,
-                width:     280,
-                background: "#0c0c16",
-                border:    "1px solid #1e1e30",
-                borderRadius: 3,
-                boxShadow: "var(--xp-shadow)",
-                userSelect: "none",
-            }}
-        >
-            {/* Drag handle */}
-            <div
-                data-drag-handle
-                onMouseDown={onDragStart}
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 14px 9px",
-                    borderBottom: "1px solid var(--line)",
-                    cursor: "grab",
-                }}
-            >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{
-                        fontSize: 11, fontWeight: 600, 
-                        color: "var(--accent-text)"
-                    }}>
-                        Results
-                    </span>
-                    <input
-                        type="text"
-                        inputMode="numeric"
-                        value={kInput}
-                        onChange={e => setKInput(e.target.value.replace(/\D/g, ""))}
-                        onBlur={commitK}
-                        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); commitK(); } }}
+        <MapWindow id="results" title="results.txt" onClose={onClose} anchor="left" defaultWidth={380} defaultHeight={560} minWidth={280}>
+            {/* How many to show */}
+            <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexShrink: 0,
+                padding: "8px 12px", background: "var(--raised)", borderBottom: "1px solid var(--line)",
+            }}>
+                <span style={{ fontSize: 13, color: "var(--text-2)" }}>
+                    {results.length} {results.length === 1 ? "match" : "matches"}
+                </span>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--muted)" }}>
+                    Show
+                    <select
+                        value={topK}
+                        onChange={e => onTopKChange?.(Number(e.target.value))}
                         onMouseDown={e => e.stopPropagation()}
+                        aria-label="Number of results"
                         style={{
-                            fontSize: 11, color: "var(--text-2)", background: "var(--raised)",
-                            border: "1px solid var(--line-strong)", borderRadius: 3,
-                            padding: "1px 4px", width: 28, textAlign: "center",
-                            outline: "none", fontFamily: "inherit",
+                            height: 28, padding: "0 6px", fontSize: 13, fontFamily: "inherit",
+                            color: "var(--text)", background: "var(--bg-deep)",
+                            border: "1px solid var(--line-strong)", borderRadius: 4, cursor: "pointer",
                         }}
-                    />
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <button
-                        onClick={onClose}
-                        onMouseDown={e => e.stopPropagation()}
-                        style={{
-                            background: "none", border: "none",
-                            color: "var(--muted)", fontSize: 14,
-                            cursor: "pointer", padding: "0 2px",
-                            lineHeight: 1, transition: "color 0.12s",
-                        }}
-                        onMouseEnter={e => e.target.style.color = "var(--accent-text-hover)"}
-                        onMouseLeave={e => e.target.style.color = "var(--muted)"}
                     >
-                        ✕
-                    </button>
-                </div>
+                        {K_OPTIONS.map(k => <option key={k} value={k}>{k}</option>)}
+                    </select>
+                </label>
             </div>
 
             {/* Column headers */}
             <div style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "6px 14px 4px",
+                display: "flex", alignItems: "center", gap: 10, flexShrink: 0,
+                padding: "6px 12px 4px",
                 borderBottom: "1px solid var(--line)",
             }}>
-                <span style={{ width: 14, flexShrink: 0 }} />
-                <span style={{ width: 6, flexShrink: 0 }} />
-                <span style={{ flex: 1, fontSize: 11, color: "var(--muted)", fontWeight: 600, }}>Match</span>
-                <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600, flexShrink: 0 }}>Similarity</span>
+                <span style={{ width: 24, flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: 12, color: "var(--muted)" }}>Match</span>
+                <span style={{ fontSize: 12, color: "var(--muted)", flexShrink: 0 }}>Similarity</span>
             </div>
 
             {/* Results list */}
-            <div style={{ padding: "8px 0", maxHeight: 300, overflowY: "auto", scrollbarWidth: "none" }}>
+            <div className="map-window-scroll" style={{ padding: "4px 0 16px" }}>
                 {results.map((r, i) => (
                     <div
-                        key={r.Name}
+                        key={`${r.Name}-${i}`}
+                        className="result-row"
                         style={{
                             display: "flex",
-                            alignItems: "center",
+                            alignItems: r.match_text ? "flex-start" : "center",
                             gap: 10,
-                            padding: "7px 14px",
-                            transition: "background 0.1s",
+                            padding: r.match_text ? "8px 12px" : "6px 12px",
+                            borderBottom: r.match_text ? "1px solid var(--line)" : "none",
+                            transition: "background-color 0.1s",
                             cursor: onFlyTo ? "pointer" : "default",
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = "var(--accent-soft)"}
                         onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                         onClick={() => onFlyTo?.(r.Name)}
+                        title={onFlyTo ? "Fly to this point" : undefined}
                     >
                         <span style={{
-                            fontSize: 11, color: "var(--muted)", width: 14,
-                            textAlign: "right", flexShrink: 0, fontWeight: 600,
+                            fontSize: 12, color: "var(--muted)", width: 24,
+                            textAlign: "right", flexShrink: 0, fontVariantNumeric: "tabular-nums",
+                            paddingTop: r.match_text ? 1 : 0,
                         }}>
                             {i + 1}
                         </span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{
+                                fontSize: 14, color: "var(--text)",
+                                overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
+                            }}>
+                                {r.Name}
+                            </div>
+                            {r.match_text && (
+                                <div
+                                    title={r.match_text}
+                                    style={{
+                                        marginTop: 2, fontSize: 13, lineHeight: 1.45, color: "var(--muted)",
+                                        display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical",
+                                        overflow: "hidden",
+                                    }}
+                                >
+                                    {r.match_text}
+                                </div>
+                            )}
+                        </div>
                         <span style={{
-                            width: 6, height: 6, borderRadius: 1.5, flexShrink: 0,
-                            background: COLORS[i % COLORS.length],
-                        }} />
-                        <span style={{
-                            flex: 1, fontSize: 12, color: "#d4d4e8",
-                            fontWeight: 500, overflow: "hidden",
-                            whiteSpace: "nowrap", textOverflow: "ellipsis",
-                        }}>
-                            {r.Name}
-                        </span>
-                        <span style={{
-                            fontSize: 11, color: "var(--accent-text)",
-                            fontWeight: 600, fontVariantNumeric: "tabular-nums",
+                            fontSize: 13, color: "var(--accent-text)",
+                            fontFamily: "var(--mono)", fontVariantNumeric: "tabular-nums",
                             flexShrink: 0,
                         }}>
                             {r.score.toFixed(2)}
@@ -178,6 +102,6 @@ export default function ResultsPanel({ results, onClose, onFlyTo, topK = 10, onT
                     </div>
                 ))}
             </div>
-        </div>
+        </MapWindow>
     );
 }

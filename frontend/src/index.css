@@ -49,11 +49,22 @@
     --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
 
     --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+    /* one layout width shared by nav, page content and footer */
+    --container: 2560px;
+    --gutter: clamp(16px, 4vw, 80px);
+    /* side padding that keeps content inside the container and aligned at any width */
+    --edge: max(var(--gutter), calc((100% - var(--container)) / 2));
 }
 
 html {
     scrollbar-gutter: stable;
     overflow-y: scroll;
+}
+/* full-screen map page: no page scrollbar */
+html.no-page-scroll {
+    overflow: hidden;
+    scrollbar-gutter: auto;
 }
 
 body {
@@ -79,8 +90,154 @@ body {
     outline-offset: 2px;
 }
 
-button:active:not(:disabled) {
-    transform: scale(0.98);
+
+/* ── Site header: menu | wordmark | action, hairline aligned to content ── */
+.site-nav {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 100;
+    padding: 0 var(--edge);
+    background: rgba(11, 13, 20, 0.9);
+    backdrop-filter: blur(12px);
+}
+.site-nav-inner {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    height: 64px;
+    border-bottom: 1px solid var(--line-strong);
+}
+.site-nav-left  { position: relative; justify-self: start; }
+.site-nav-right { justify-self: end; display: flex; align-items: center; gap: 12px; }
+
+/* the small uppercase labels are a deliberate exception, only here in the header */
+.site-nav-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 36px;
+    padding: 0 4px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+    transition: color 0.15s var(--ease);
+}
+.site-nav-action:hover { color: var(--accent-text-hover); }
+.site-nav-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.site-nav-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 8px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font: inherit;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+}
+.site-nav-brand svg { flex-shrink: 0; }
+
+/* Start-menu style dropdown */
+.start-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    width: 260px;
+    overflow: hidden;
+    background: var(--card);
+    border: 1px solid #1e4ca8;
+    border-radius: 8px 8px 4px 4px;
+    box-shadow: var(--xp-shadow);
+    animation: menu-in 0.18s var(--ease);
+}
+@keyframes menu-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: none; }
+}
+.start-menu-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--xp-title);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+.start-menu-body { padding: 6px 0; }
+.start-menu-group + .start-menu-group {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--line);
+}
+.start-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 36px;
+    padding: 0 14px;
+    background: none;
+    border: none;
+    color: var(--text-2);
+    font: inherit;
+    font-size: 14px;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.12s var(--ease), background-color 0.12s var(--ease);
+}
+.start-menu-item:hover { background: var(--accent); color: #fff; }
+.start-menu-item.is-current { color: var(--text); }
+.start-menu-ext { font-size: 12px; opacity: 0.7; }
+.start-menu-foot {
+    padding: 6px 0;
+    background: var(--raised);
+    border-top: 1px solid var(--line);
+}
+
+/* desktop: links visible, MENU hidden */
+.site-nav-links { display: flex; align-items: center; gap: 24px; }
+.site-nav-menu-btn { display: none; }
+.site-nav-link { color: var(--text-2); }
+.site-nav-link:hover,
+.site-nav-link.is-current { color: var(--text); }
+.site-nav-signin { color: var(--text-2); }
+.site-nav-signin:hover { color: var(--text); }
+.site-nav-right { gap: 24px; }
+/* the main action gets a light outline so it reads as the button */
+.site-nav-cta {
+    padding: 0 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+}
+.site-nav-cta:hover { border-color: var(--accent-line); }
+
+/* narrow screens: links fold into MENU (the Start-menu window) */
+@media (max-width: 860px) {
+    .site-nav-links,
+    .site-nav-signin { display: none; }
+    .site-nav-menu-btn { display: inline-flex; }
+}
+
+@media (max-width: 640px) {
+    .site-nav-inner { height: 56px; }
+    .site-nav-cta { border: none; padding: 0 4px; }
+    .site-nav-label { display: none; }           /* icons only on phones */
+    .site-nav-brand { font-size: 15px; gap: 8px; }
+    .start-menu { width: min(260px, calc(100vw - 32px)); }
 }
 
 /* ── Nav ────────────────────────────────────────────────────────────────── */
@@ -111,11 +268,8 @@ button:active:not(:disabled) {
     line-height: 1;
     color: var(--muted);
 }
-.nav-cta {
-    transition: background-color 0.15s var(--ease);
-}
-.nav-cta:hover {
-    background: #ffffff !important;
+.nav-cta-btn {
+    margin-left: 8px;
 }
 
 /* ── XP window chrome (shared) ──────────────────────────────────────────── */
@@ -148,4 +302,387 @@ button:active:not(:disabled) {
 }
 .xp-title-btn--close {
     background: var(--xp-close);
+}
+.xp-title-btn--sm {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    cursor: pointer;
+}
+.xp-title-btn[role="button"]:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 1px;
+}
+
+/* window frame */
+.xp-window {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--card);
+    border: 1px solid #1e4ca8;
+    border-radius: 8px 8px 4px 4px;
+    box-shadow: var(--xp-shadow);
+    overflow: hidden;
+    text-align: left;
+}
+.xp-window.is-moved,
+.xp-window.is-dragging {
+    position: relative;
+    z-index: 5;
+}
+.xp-window.is-dragging {
+    z-index: 50;
+    user-select: none;
+}
+.xp-window-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 30px;
+    padding: 4px 4px 4px 10px;
+    background: var(--xp-title);
+    user-select: none;
+}
+/* a maximized page window fills the screen below the nav */
+.xp-window.is-maximized {
+    position: fixed;
+    top: calc(56px + 16px);
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    z-index: 150;
+    transform: none;
+}
+.xp-window.is-maximized .xp-window-body {
+    overflow: auto;
+}
+.xp-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 140;
+    background: rgba(7, 8, 13, 0.6);
+}
+.xp-window-title.is-draggable { cursor: grab; }
+.xp-window.is-dragging .xp-window-title { cursor: grabbing; }
+.xp-window-title-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+.xp-window-btns {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+}
+.xp-window-body {
+    padding: 24px;
+    flex: 1;
+    min-height: 0;
+}
+
+/* floating windows over the map (details, compare, controls, results) */
+.map-window {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--card);
+    border: 1px solid #1e4ca8;
+    border-radius: 8px 8px 4px 4px;
+    box-shadow: var(--xp-shadow);
+    overflow: hidden;
+    user-select: none;
+}
+.map-window-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 30px;
+    padding: 4px 4px 4px 10px;
+    background: var(--xp-title);
+    flex-shrink: 0;
+}
+.map-window-title-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+.map-window-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.map-window-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    scrollbar-width: thin;
+    user-select: text;
+}
+/* thin status strip at the bottom of each window, home of the resize grip */
+.map-window-status {
+    position: relative;
+    flex-shrink: 0;
+    height: 14px;
+    background: var(--raised);
+    border-top: 1px solid var(--line);
+}
+/* invisible resize handles on every edge and corner */
+.map-window-edge { position: absolute; z-index: 3; }
+.map-window-edge--n  { top: 0;    left: 12px;  right: 12px; height: 4px; }
+.map-window-edge--s  { bottom: 0; left: 12px;  right: 16px; height: 6px; }
+.map-window-edge--e  { right: 0;  top: 12px;   bottom: 16px; width: 6px; }
+.map-window-edge--w  { left: 0;   top: 12px;   bottom: 12px; width: 6px; }
+.map-window-edge--ne { top: 0;    right: 0;    width: 10px; height: 4px; }
+.map-window-edge--nw { top: 0;    left: 0;     width: 10px; height: 4px; }
+.map-window-edge--se { bottom: 0; right: 0;    width: 16px; height: 16px; }
+.map-window-edge--sw { bottom: 0; left: 0;     width: 12px; height: 12px; }
+/* XP-style dotted resize grip */
+.map-window-grip {
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    width: 12px;
+    height: 12px;
+    cursor: nwse-resize !important;
+    background:
+        radial-gradient(circle, var(--muted) 1px, transparent 1.5px) 0 0 / 5px 5px;
+    -webkit-mask: linear-gradient(135deg, transparent 50%, #000 50%);
+            mask: linear-gradient(135deg, transparent 50%, #000 50%);
+    opacity: 0.8;
+}
+
+/* map taskbar: minimized map windows wait here */
+.map-taskbar {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    z-index: 400;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: calc(100% - 16px);
+    padding: 4px;
+    background: linear-gradient(180deg, #2b5fc4 0%, #1d4aa8 100%);
+    border: 1px solid #1e4ca8;
+    border-radius: 6px;
+    box-shadow: var(--xp-shadow);
+}
+/* the same taskbar fixed along the bottom of normal pages */
+.page-taskbar {
+    position: fixed;
+    left: 50%;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    z-index: 130;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    max-width: calc(100% - 32px);
+    padding: 4px;
+    background: linear-gradient(180deg, #2b5fc4 0%, #1d4aa8 100%);
+    border: 1px solid #1e4ca8;
+    border-radius: 6px;
+    box-shadow: var(--xp-shadow);
+}
+.map-taskbar-item {
+    max-width: 220px;
+    height: 28px;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: linear-gradient(180deg, #4a85ea 0%, #3268d0 100%);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 4px;
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    transition: filter 0.15s var(--ease);
+}
+.map-taskbar-item:hover { filter: brightness(1.12); }
+
+
+/* ── Page shell ─────────────────────────────────────────────────────────── */
+.page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+}
+.page-main {
+    flex: 1;
+    width: 100%;
+    padding: 40px var(--edge) 64px;
+}
+.page-title {
+    font-size: clamp(24px, 3vw, 32px);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0;
+}
+.page-sub {
+    margin: 8px 0 0;
+    max-width: 36rem;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-2);
+}
+
+/* prose inside windows: sans for reading, mono stays for labels */
+.prose p {
+    max-width: 72ch;
+    margin: 0 0 12px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-2);
+}
+.prose p:last-child { margin-bottom: 0; }
+.prose a,
+.text-link {
+    color: var(--accent-text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(127, 176, 255, 0.4);
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    transition: color 0.15s var(--ease), text-decoration-color 0.15s var(--ease);
+}
+.prose a:hover,
+.text-link:hover {
+    color: var(--accent-text-hover);
+    text-decoration-color: currentColor;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.15s var(--ease), background-color 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.btn-light {
+    background: var(--text);
+    color: var(--on-light);
+}
+.btn-light:hover { background: #fff; }
+.btn-blue {
+    background: var(--accent);
+    color: #fff;
+}
+.btn-blue:hover { background: var(--accent-hover); }
+.btn-outline {
+    background: transparent;
+    color: var(--text-2);
+    border-color: var(--line-strong);
+}
+.btn-outline:hover { color: var(--text); background: var(--card); }
+.btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
+
+/* XP "Start button" green, kept for the Ko-fi link */
+.btn-kofi {
+    background: linear-gradient(180deg, #5c9e31 0%, #3d6e1f 100%);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+.btn-kofi:hover { filter: brightness(1.1); }
+
+/* ── Support ────────────────────────────────────────────────────────────── */
+.support-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    align-items: start;
+    max-width: 1280px;
+}
+.support-row { grid-template-columns: 140px 1fr !important; }
+
+/* ── Setup wizard ───────────────────────────────────────────────────────── */
+.setup-main {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+.setup-window {
+    width: min(600px, 100%);
+}
+.setup-window .xp-window-body {
+    padding: 32px;
+}
+@media (max-width: 768px) {
+    .setup-window .xp-window-body { padding: 20px; }
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+.site-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    padding: 24px var(--edge);
+    border-top: 1px solid var(--line);
+}
+.site-footer-logo {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+}
+.site-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 20px;
+}
+.site-footer-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: 14px;
+    color: var(--text-2);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.15s var(--ease);
+}
+.site-footer-link:hover { color: var(--text); }
+
+@media (max-width: 768px) {
+    .page-main { padding: 24px var(--edge) 48px; }
+    .site-footer { padding: 20px var(--edge); }
+    .xp-window-body { padding: 16px; }
 }

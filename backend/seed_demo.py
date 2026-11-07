@@ -64,6 +64,12 @@ reduce(n_components=2, data_dir=DEMO_DIR)
 print("Running UMAP 3D...")
 reduce(n_components=3, data_dir=DEMO_DIR)
 
+# Chunk index for search: each drug is ranked by its best-matching sentence of side effects
+print("Building chunk search index...")
+from services.chunker import build_chunk_index
+n_chunks = build_chunk_index(DEMO_DIR, texts, embed_texts)
+print(f"Chunks done: {n_chunks}")
+
 import json
 with open(f"{DEMO_DIR}/meta.json", "w") as f:
     json.dump({"embed_cols": ["side_effects"]}, f)

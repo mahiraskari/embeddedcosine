@@ -1,5 +1,7 @@
 import { useState, useRef } from "react";
 import { uploadDataset, configureDataset, getPipelineStreamURL } from "../api/client";
+import Navbar from "./Navbar";
+import XPWindow from "./XPWindow";
 
 const STEPS = ["Upload", "Configure", "Build"];
 
@@ -137,16 +139,23 @@ export default function SetupView({ onDone, onBack }) {
     };
 
     return (
-        <div style={styles.overlay}>
+        <div className="page">
+            <Navbar />
+            <main className="page-main setup-main">
         <style>{`
             @keyframes sweep {
                 0%   { transform: translateX(-150%); }
                 100% { transform: translateX(350%); }
             }
         `}</style>
-            <div style={styles.card}>
-                <h1 style={styles.logo}>embeddedcosine</h1>
-                <p style={styles.sub}>Turn any dataset into a semantic map</p>
+            <XPWindow
+                title="new_dataset.exe"
+                className="setup-window"
+                collapsible={false}
+                onClose={!building && onBack ? onBack : undefined}
+            >
+                <h1 style={styles.logo}>New dataset</h1>
+                <p style={styles.sub}>Turn a CSV or JSON file into a map you can search by meaning.</p>
 
                 {/* Step indicator */}
                 <div style={styles.steps}>
@@ -154,7 +163,7 @@ export default function SetupView({ onDone, onBack }) {
                         <div key={label} style={styles.stepRow}>
                             <div style={{
                                 ...styles.stepDot,
-                                background: i <= step ? "var(--accent)" : "#1e1e1e",
+                                background: i <= step ? "var(--accent)" : "var(--raised)",
                                 border: `1px solid ${i <= step ? "var(--accent)" : "var(--line-strong)"}`,
                                 color: i <= step ? "var(--text)" : "var(--text-2)",
                             }}>
@@ -164,7 +173,7 @@ export default function SetupView({ onDone, onBack }) {
                                 {label}
                             </span>
                             {i < STEPS.length - 1 && (
-                                <div style={{ ...styles.stepLine, background: i < step ? "var(--accent)" : "#222" }} />
+                                <div style={{ ...styles.stepLine, background: i < step ? "var(--accent)" : "var(--line-strong)" }} />
                             )}
                         </div>
                     ))}
@@ -282,8 +291,8 @@ export default function SetupView({ onDone, onBack }) {
                             />
                         </div>
 
-                        <button style={styles.btn} onClick={handleConfigure}>
-                            Confirm →
+                        <button className="btn btn-blue" onClick={handleConfigure}>
+                            Next
                         </button>
                     </div>
                 )}
@@ -304,8 +313,8 @@ export default function SetupView({ onDone, onBack }) {
                                 </div>
                             </div>
                         ) : (
-                            <button style={styles.btn} onClick={handleBuild}>
-                                Build map →
+                            <button className="btn btn-blue" onClick={handleBuild}>
+                                Build map
                             </button>
                         )}
                     </div>
@@ -314,7 +323,7 @@ export default function SetupView({ onDone, onBack }) {
                 {error && <p style={styles.error}>{error}</p>}
 
                 {onBack && !building && (
-                    <button onClick={onBack} style={styles.backBtn}>← Back</button>
+                    <button onClick={onBack} className="btn btn-outline btn-sm" style={{ marginTop: 24 }}>← Back to datasets</button>
                 )}
                 {building && (
                     <button
@@ -323,12 +332,14 @@ export default function SetupView({ onDone, onBack }) {
                             if (progressRef.current) clearInterval(progressRef.current);
                             onBack?.();
                         }}
-                        style={styles.backBtn}
+                        className="btn btn-outline btn-sm"
+                        style={{ marginTop: 24 }}
                     >
-                        ← Cancel
+                        Cancel
                     </button>
                 )}
-            </div>
+            </XPWindow>
+            </main>
         </div>
     );
 }
@@ -341,19 +352,17 @@ const styles = {
     },
     card: {
         background: "var(--card)",
-        border: "1px solid #1e1e30",
+        border: "1px solid var(--line-strong)",
         borderRadius: 2,
         padding: "40px 44px",
         width: 540,
     },
     logo: {
-        fontSize: 20, fontWeight: 600, color: "var(--text)",
-        letterSpacing: "-0.5px", marginBottom: 4,
-        fontFamily: "var(--mono)",
+        fontSize: 20, fontWeight: 500, color: "var(--text)",
+        marginBottom: 6,
     },
     sub: {
-        fontSize: 12, color: "var(--muted)", marginBottom: 36,
-        letterSpacing: "0.01em",
+        fontSize: 14, color: "var(--text-2)", marginBottom: 32, lineHeight: 1.6,
     },
     steps: {
         display: "flex", alignItems: "center", marginBottom: 36, gap: 0,
@@ -382,7 +391,7 @@ const styles = {
         fontSize: 11, color: "var(--text-2)", fontFamily: "var(--mono)",
     },
     dropzone: {
-        border: "1px solid #1e1e30",
+        border: "1px solid var(--line-strong)",
         borderRadius: 2,
         padding: "40px 24px",
         display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
@@ -407,7 +416,7 @@ const styles = {
     },
     select: {
         background: "var(--card)",
-        border: "1px solid #1e1e30",
+        border: "1px solid var(--line-strong)",
         color: "var(--text)",
         borderRadius: 2,
         padding: "7px 10px",
@@ -416,7 +425,7 @@ const styles = {
     },
     nameInput: {
         background: "var(--card)",
-        border: "1px solid #1e1e30",
+        border: "1px solid var(--line-strong)",
         color: "var(--text)",
         borderRadius: 2,
         padding: "7px 10px",
@@ -430,7 +439,7 @@ const styles = {
         flexDirection: "column",
         gap: 6,
         background: "var(--card)",
-        border: "1px solid #1e1e30",
+        border: "1px solid var(--line-strong)",
         borderRadius: 2,
         padding: "10px 12px",
         maxHeight: 180,

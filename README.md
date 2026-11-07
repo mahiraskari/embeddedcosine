@@ -30,6 +30,21 @@ Steps 3 and 4 are where the name comes from. **embedded** + **cosine** = embedde
 
 ---
 
+## Datasets used for testing
+
+Most of the data used while building and testing embeddedcosine came from [Kaggle](https://www.kaggle.com/datasets), which is a good place to find datasets on almost any topic. None of these files are committed to the repo; download them yourself if you want to reproduce anything.
+
+| Dataset | File | Embedded column(s) | Used for |
+|---------|------|--------------------|----------|
+| Drug side effects (Kaggle) | `drugs_side_effects_drugs_com.csv` | `side_effects` | The current demo map on the home page, built with `backend/seed_demo.py` |
+| Movies and TV shows (Kaggle) | `titles.csv` | `description` | The earlier demo map |
+| Steam games (Kaggle) | `games.json` / `games.csv` | `about_the_game`, genres and user tags | The first dataset the pipeline was built and tested on |
+| Media test file (hand-made) | `backend/data/test_media.csv` | `Description` | Testing automatic detection of image URL columns |
+
+To rebuild the demo, place the drug side effects CSV in `data/` and run `python seed_demo.py` from `backend/`.
+
+---
+
 ## Branches
 
 ### main

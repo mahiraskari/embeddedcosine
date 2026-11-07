@@ -1,317 +1,130 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { searchGames, fetchDemoPoints } from "../api/client";
-import { supabase } from "../supabase";
 import LoginModal from "../components/LoginModal";
-import AccountMenu from "../components/AccountMenu";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import MapView from "../components/MapView";
+import XPWindow from "../components/XPWindow";
 import "./LandingPage.css";
 
-const FEATURES = [
-    {
-        icon: "⬡",
-        title: "Upload anything",
-        desc: "CSV or JSON. Pick the column to embed and the display name. No code changes needed.",
-    },
-    {
-        icon: "◈",
-        title: "AI-powered layout",
-        desc: "Sentence-transformer embeddings + UMAP reduction place semantically similar items near each other.",
-    },
-    {
-        icon: "⊹",
-        title: "Natural language search",
-        desc: "Type a concept, not a keyword. The search finds items whose meaning matches yours.",
-    },
-    {
-        icon: "◫",
-        title: "2D & 3D exploration",
-        desc: "Pan and zoom a flat Voronoi map or fly through the point cloud in 3D.",
-    },
+const EXAMPLE_QUERIES = ["drowsiness", "nausea", "hair loss", "skin rash"];
+
+const STEPS = [
+    ["01", "Upload", <>Drop a CSV or JSON. The backend reads the file with pandas and returns a cleaned and tidied column list. <a className="text-link" href="https://kaggle.com" target="_blank" rel="noopener noreferrer">Kaggle</a> is a good place to find datasets on any topic, and what I used for testing.</>],
+    ["02", "Configure", "Pick a display-name column and one or more columns to embed. They get joined into a single string per row."],
+    ["03", "Embed", "The AI model reads each row and embeds it into a vector of numbers that captures its meaning.", "embedded"],
+    ["04", "Index + reduce", "FAISS builds a cosine-similarity index. UMAP projects the vectors into 2D and 3D space.", "cosine"],
+    ["05", "Explore", "Pan, zoom, fly through the point cloud. Search by concept. Click any point for details."],
 ];
 
-// Points only — no labels on individual dots, clusters labelled separately
-const DEMO_POINTS = [
-    // Metroidvania cluster — top-left
-    { x: 14, y: 20, color: "var(--accent-text)", name: "Hollow Knight" },
-    { x: 19, y: 16, color: "#a78bfa", name: "Celeste" },
-    { x: 11, y: 27, color: "#7c3aed", name: "Dead Cells" },
-    { x: 18, y: 30, color: "#9333ea", name: "Ori" },
-    { x: 23, y: 23, color: "var(--accent-text)", name: "Blasphemous" },
-    // Competitive FPS — top-right
-    { x: 82, y: 14, color: "#ef4444", name: "Apex Legends" },
-    { x: 88, y: 20, color: "var(--negative)", name: "CS2" },
-    { x: 78, y: 22, color: "#fca5a5", name: "Rust" },
-    { x: 85, y: 28, color: "#dc2626", name: "Valorant" },
-    { x: 91, y: 13, color: "var(--negative)", name: "TF2" },
-    // Survival / Sandbox — centre
-    { x: 52, y: 48, color: "#34d399", name: "Stardew Valley" },
-    { x: 59, y: 54, color: "#6ee7b7", name: "Terraria" },
-    { x: 55, y: 61, color: "#059669", name: "Valheim" },
-    { x: 48, y: 55, color: "#10b981", name: "Minecraft" },
-    { x: 63, y: 46, color: "#34d399", name: "Core Keeper" },
-    // Soulslike — bottom-left
-    { x: 22, y: 75, color: "#fbbf24", name: "Elden Ring" },
-    { x: 16, y: 82, color: "#f59e0b", name: "Dark Souls III" },
-    { x: 28, y: 80, color: "#d97706", name: "Sekiro" },
-    { x: 13, y: 70, color: "#fbbf24", name: "Lies of P" },
-    { x: 30, y: 70, color: "#f59e0b", name: "Nioh 2" },
-    // Open World RPG — bottom-right
-    { x: 76, y: 72, color: "#c084fc", name: "The Witcher 3" },
-    { x: 83, y: 79, color: "#e879f9", name: "Cyberpunk 2077" },
-    { x: 70, y: 80, color: "#a855f7", name: "Skyrim" },
-    { x: 88, y: 70, color: "#c084fc", name: "RDR2" },
-    // Puzzle / Narrative — mid-left
-    { x: 12, y: 50, color: "#38bdf8", name: "Portal 2" },
-    { x: 19, y: 57, color: "#0ea5e9", name: "Half-Life 2" },
-    { x: 10, y: 61, color: "#38bdf8", name: "The Witness" },
+const STACK = [
+    ["Embeddings", "all-MiniLM-L6-v2 via sentence-transformers. 384-dimensional vectors per item."],
+    ["Vector index", "FAISS IndexFlatIP. Cosine similarity search over the full dataset."],
+    ["Dimensionality reduction", "UMAP. Projects 384-dim vectors down to 2D and 3D for visualisation."],
+    ["Backend", "FastAPI + Python. Streaming pipeline via SSE, JWT auth via Supabase."],
+    ["Frontend", "React + Three.js. Interactive 2D/3D point cloud renderer."],
 ];
 
-const CLUSTERS = [
-    { x: 17, y: 9,  label: "Metroidvania",      color: "var(--accent-text)", anchor: "middle" },
-    { x: 85, y: 7,  label: "Competitive FPS",   color: "var(--negative)", anchor: "middle" },
-    { x: 56, y: 39, label: "Survival / Sandbox", color: "#34d399", anchor: "middle" },
-    { x: 21, y: 89, label: "Soulslike",         color: "#fbbf24", anchor: "middle" },
-    { x: 79, y: 90, label: "Open World RPG",    color: "#c084fc", anchor: "middle" },
-    { x: 12, y: 42, label: "Puzzle",            color: "#38bdf8", anchor: "middle" },
-];
-
-const RESULT_COLORS = ["#818cf8","#a78bfa","#c084fc","#e879f9","#34d399","#38bdf8","#fbbf24","#f87171"];
-
-function DemoMap() {
-    const [hovered, setHovered] = useState(null);
-    return (
-        <div className="demo-map">
-            <div className="demo-map-header">
-                <span className="demo-map-tag">2D map</span>
-                <span className="demo-map-title">Movies & TV shows · hover a point</span>
-            </div>
-            <svg viewBox="0 0 100 100" className="demo-svg" style={{ cursor: "crosshair" }}>
-                <defs>
-                    <radialGradient id="g1" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#818cf8" stopOpacity="0.13"/><stop offset="100%" stopColor="#818cf8" stopOpacity="0"/></radialGradient>
-                    <radialGradient id="g2" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#34d399" stopOpacity="0.13"/><stop offset="100%" stopColor="#34d399" stopOpacity="0"/></radialGradient>
-                    <radialGradient id="g3" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#f87171" stopOpacity="0.13"/><stop offset="100%" stopColor="#f87171" stopOpacity="0"/></radialGradient>
-                    <radialGradient id="g4" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#fbbf24" stopOpacity="0.13"/><stop offset="100%" stopColor="#fbbf24" stopOpacity="0"/></radialGradient>
-                    <radialGradient id="g5" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#38bdf8" stopOpacity="0.13"/><stop offset="100%" stopColor="#38bdf8" stopOpacity="0"/></radialGradient>
-                    <radialGradient id="g6" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#c084fc" stopOpacity="0.13"/><stop offset="100%" stopColor="#c084fc" stopOpacity="0"/></radialGradient>
-                </defs>
-
-                {/* Cluster blobs */}
-                <ellipse cx="17" cy="22" rx="13" ry="14" fill="url(#g1)"/>
-                <ellipse cx="85" cy="20" rx="12" ry="14" fill="url(#g3)"/>
-                <ellipse cx="56" cy="53" rx="14" ry="14" fill="url(#g2)"/>
-                <ellipse cx="21" cy="76" rx="13" ry="13" fill="url(#g4)"/>
-                <ellipse cx="79" cy="77" rx="13" ry="13" fill="url(#g6)"/>
-                <ellipse cx="13" cy="54" rx="9"  ry="11" fill="url(#g5)"/>
-
-                {/* Cluster labels — in clear zones above blobs */}
-                {CLUSTERS.map(c => (
-                    <text key={c.label} x={c.x} y={c.y} fontSize="2.4" fill={c.color}
-                        opacity="0.6" textAnchor={c.anchor} fontFamily="sans-serif" fontWeight="700">
-                        {c.label}
-                    </text>
-                ))}
-
-                {/* Dots — hover shows name */}
-                {DEMO_POINTS.map(p => (
-                    <rect
-                        key={p.name}
-                        x={p.x - 1} y={p.y - 1} width="2" height="2"
-                        fill={p.color}
-                        opacity={hovered === p.name ? 1 : 0.85}
-                        onMouseEnter={() => setHovered(p.name)}
-                        onMouseLeave={() => setHovered(null)}
-                        style={{ cursor: "crosshair" }}
-                    />
-                ))}
-
-                {/* Hover tooltip — shown as SVG text near hovered dot */}
-                {hovered && (() => {
-                    const p = DEMO_POINTS.find(d => d.name === hovered);
-                    if (!p) return null;
-                    // Flip the tooltip to the left for points near the right edge of the SVG
-                    const tx = p.x > 70 ? p.x - 2 : p.x + 2.5;
-                    const anchor = p.x > 70 ? "end" : "start";
-                    return (
-                        <g>
-                            <rect x={tx - (anchor === "end" ? 22 : 0)} y={p.y - 3.5} width="22" height="4.5" rx="1" fill="rgba(10,10,20,0.92)"/>
-                            <text x={anchor === "end" ? tx - 1 : tx + 1} y={p.y + 0.2}
-                                fontSize="2.2" fill={p.color} textAnchor={anchor}
-                                fontFamily="sans-serif" fontWeight="600">
-                                {p.name}
-                            </text>
-                        </g>
-                    );
-                })()}
-            </svg>
-        </div>
-    );
-}
-
-function DemoSearch() {
-    const [query, setQuery]       = useState("");
-    const [results, setResults]   = useState([]);
-    const [loading, setLoading]   = useState(false);
-    const [searched, setSearched] = useState(false);
-    const [columns, setColumns]   = useState([]);
-    const [field, setField]       = useState("Name");
-    const [embeddedBy, setEmbeddedBy] = useState("");
-
-    const handleSearch = async (e) => {
-        e.preventDefault();
-        if (!query.trim()) return;
-        setLoading(true);
-        setSearched(true);
-        try {
-            const data = await searchGames(query.trim(), 5, true);
-            setResults(data.results);
-        } catch {
-            setResults([]);
-        }
-        setLoading(false);
-    };
-
-    return (
-        <div className="demo-search">
-            <div className="demo-map-header">
-                <span className="demo-map-tag">search</span>
-                <span className="demo-map-title">Try a live search</span>
-                {embeddedBy && (
-                    <span className="demo-embedded-by">embedded by: <b>{embeddedBy}</b></span>
-                )}
-            </div>
-            <div className="demo-search-inner">
-                <form className="demo-query-form" onSubmit={handleSearch}>
-                    <span className="demo-query-icon">⊹</span>
-                    <input
-                        className="demo-query-input"
-                        type="text"
-                        placeholder="e.g. nausea and vomiting"
-                        value={query}
-                        onChange={e => setQuery(e.target.value)}
-                    />
-                    <button type="submit" className="demo-query-btn" disabled={loading}>
-                        {loading ? "…" : "→"}
-                    </button>
-                </form>
-
-                {columns.length > 1 && (
-                    <div className="demo-field-row">
-                        <span className="demo-field-label">Show field</span>
-                        <div className="demo-field-pills">
-                            {columns.map(c => (
-                                <button
-                                    key={c}
-                                    className={`demo-field-pill${field === c ? " active" : ""}`}
-                                    onClick={() => setField(c)}
-                                    type="button"
-                                >
-                                    {c}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {searched && (
-                    <>
-                        <div className="demo-results-label">Top matches · {field}</div>
-                        <div className="demo-results">
-                            {loading ? (
-                                <div style={{ color: "var(--muted)", fontSize: 12, padding: "12px 0" }}>Searching…</div>
-                            ) : results.length === 0 ? (
-                                <div style={{ color: "var(--muted)", fontSize: 12, padding: "12px 0" }}>No results. Is the backend running?</div>
-                            ) : results.map((r, i) => (
-                                <div key={r.Name} className="demo-result-row">
-                                    <span className="demo-result-rank">{i + 1}</span>
-                                    <span className="demo-result-dot" style={{ background: RESULT_COLORS[i % RESULT_COLORS.length] }} />
-                                    <div className="demo-result-info">
-                                        <span className="demo-result-name">{r.Name}</span>
-                                        {field !== "Name" && r[field] && (
-                                            <span className="demo-result-field">
-                                                {String(r[field]).slice(0, 60)}{String(r[field]).length > 60 ? "…" : ""}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <span className="demo-result-score">{r.score.toFixed(2)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </>
-                )}
-
-                {!searched && (
-                    <p className="demo-search-note" style={{ marginTop: 16 }}>
-                        Search hits the real FAISS index. Pick a field above to see different metadata in results.
-                    </p>
-                )}
-            </div>
-        </div>
-    );
-}
+// ── Live demo ────────────────────────────────────────────────────────────────
 
 function LiveDemo({ navigate }) {
     const [points2d, setPoints2d]       = useState(null);
     const [points3d, setPoints3d]       = useState(null);
+    const [failed, setFailed]           = useState(false);
     const [dims, setDims]               = useState(2);
     const [showVoronoi, setShowVoronoi] = useState(false);
     const [query, setQuery]             = useState("");
+    const [lastQuery, setLastQuery]     = useState("");
     const [searchResults, setSearchResults] = useState(null);
     const [searching, setSearching]     = useState(false);
+    const [showInfo, setShowInfo]       = useState(true);
 
     // Prefetch both 2D and 3D in parallel so toggling dims doesn't trigger another round-trip
     useEffect(() => {
-        fetchDemoPoints(2).then(d => setPoints2d(d.points)).catch(() => {});
+        fetchDemoPoints(2).then(d => setPoints2d(d.points)).catch(() => setFailed(true));
         fetchDemoPoints(3).then(d => setPoints3d(d.points)).catch(() => {});
     }, []);
 
     const points = dims === 3 ? points3d : points2d;
     const loaded = points !== null;
 
-    const handleSearch = async (e) => {
-        e.preventDefault();
-        if (!query.trim()) { setSearchResults(null); return; }
+    const runSearch = async (q) => {
+        const trimmed = q.trim();
+        if (!trimmed) { setSearchResults(null); return; }
         setSearching(true);
         try {
-            const d = await searchGames(query.trim(), 8, true);
+            const d = await searchGames(trimmed, 25, true);
             setSearchResults(d.results);
-        } catch {}
+            setLastQuery(trimmed);
+        } catch {
+            setSearchResults(null);
+        }
         setSearching(false);
     };
 
-    return (
-        <div className="live-demo-wrap">
-            {/* XP title bar */}
-            <div className="live-demo-bar">
-                <span className="live-demo-bar-title">embeddedcosine_preview.exe</span>
-                <div className="live-demo-xp-btns">
-                    <span className="xp-title-btn" aria-hidden="true">—</span>
-                    <span className="xp-title-btn" role="button" aria-label="Open full map"
-                        onClick={() => navigate("/map?demo=true")}>□</span>
-                    <span className="xp-title-btn xp-title-btn--close" aria-hidden="true">✕</span>
-                </div>
-            </div>
+    const clear = () => { setQuery(""); setSearchResults(null); setLastQuery(""); };
 
+    // Carry the current search over to the full map so the results list is waiting there
+    // (and, when a point was clicked, open the full map with that point selected)
+    // The map keeps the click handler it was first given, so read the current search from a ref
+    const searchRef = useRef({ lastQuery: "", hasResults: false });
+    useEffect(() => { searchRef.current = { lastQuery, hasResults: Boolean(searchResults) }; }, [lastQuery, searchResults]);
+    const openFullMap = (point) => {
+        const params = new URLSearchParams({ demo: "true" });
+        const { lastQuery: q, hasResults } = searchRef.current;
+        if (q && hasResults) params.set("q", q);
+        if (point?.Name) params.set("select", point.Name);
+        navigate(`/map?${params.toString()}`);
+    };
+
+    const status = !points2d
+        ? ""
+        : searchResults
+            ? `${searchResults.length} closest matches for “${lastQuery}”`
+            : `${points2d.length.toLocaleString()} drugs · hover a point to see its name, click it to open its details`;
+
+    return (
+        <XPWindow
+            id="demo"
+            title="drug_side_effects.exe"
+            className="live-demo"
+            bodyClassName="live-demo-body"
+            collapsible={false}
+            onMaximize={() => openFullMap()}
+            maximizeLabel="Open full map"
+        >
             {/* Toolbar */}
             <div className="live-demo-toolbar">
-                <form className="live-demo-search" onSubmit={handleSearch} role="search">
+                <form className="live-demo-search" role="search" onSubmit={e => { e.preventDefault(); runSearch(query); }}>
                     <input
                         className="live-demo-search-input"
                         type="text"
-                        placeholder="Search a side effect, e.g. drowsiness"
+                        placeholder="Search a side effect"
                         aria-label="Search side effects"
                         value={query}
                         onChange={e => setQuery(e.target.value)}
                     />
                     {searchResults && (
-                        <button type="button" className="live-demo-clear" aria-label="Clear search"
-                            onClick={() => { setQuery(""); setSearchResults(null); }}>✕</button>
+                        <button type="button" className="live-demo-clear" aria-label="Clear search" onClick={clear}>✕</button>
                     )}
                     <button type="submit" className="live-demo-go" disabled={searching}>
                         {searching ? "Searching" : "Search"}
                     </button>
                 </form>
+                <div className="live-demo-examples" aria-label="Example searches">
+                    <span className="live-demo-examples-label">Try</span>
+                    {EXAMPLE_QUERIES.map(q => (
+                        <button
+                            key={q}
+                            type="button"
+                            className={`live-demo-chip${lastQuery === q && searchResults ? " is-active" : ""}`}
+                            onClick={() => { setQuery(q); runSearch(q); }}
+                        >
+                            {q}
+                        </button>
+                    ))}
+                </div>
                 <div className="live-demo-toolbar-right">
                     {dims === 2 && (
                         <button
@@ -328,82 +141,217 @@ function LiveDemo({ navigate }) {
                         <button onClick={() => setDims(2)} aria-pressed={dims === 2}>2D</button>
                         <button onClick={() => setDims(3)} aria-pressed={dims === 3}>3D</button>
                     </div>
+                    {!showInfo && (
+                        <button className="live-demo-voronoi" onClick={() => setShowInfo(true)} aria-label="What am I looking at?" title="What am I looking at?">?</button>
+                    )}
                 </div>
             </div>
 
-            {/* Map area */}
+            {/* What is being shown */}
+            {showInfo && (
+                <div className="live-demo-info">
+                    <p className="live-demo-info-text">
+                        Each point is a drug. Its list of side effects was turned into an embedding,
+                        a vector of numbers that captures what the text means. Drugs with similar side effects end up
+                        close together, even when the wording differs. Search compares your words with every sentence of every
+                        drug's side effects and ranks each drug by its closest sentence.
+                    </p>
+                    <dl className="live-demo-info-specs">
+                        <div><dt>Data</dt><dd>{points2d ? `${points2d.length.toLocaleString()} drugs` : "drugs"}</dd></div>
+                        <div><dt>Embedded</dt><dd>side_effects</dd></div>
+                        <div><dt>Model</dt><dd>MiniLM · 384 dims</dd></div>
+                        <div title="FAISS finds the stored vectors nearest to your search. A flat index checks every one, so results are exact."><dt>Index</dt><dd>FAISS · exact</dd></div>
+                        <div title="Each drug's side effects are split into sentences, and a drug ranks by the one that matches your search best."><dt>Ranking</dt><dd>closest sentence</dd></div>
+                        <div title="How close in meaning two vectors are, from 0 (unrelated) to 1 (the same)."><dt>Score</dt><dd>cosine 0–1</dd></div>
+                        <div><dt>Layout</dt><dd>UMAP</dd></div>
+                    </dl>
+                    <button className="live-demo-info-hide" onClick={() => setShowInfo(false)} aria-label="Hide explanation">Hide</button>
+                </div>
+            )}
+
+            {/* Map */}
             <div className="live-demo-map">
-                {!loaded ? (
+                {failed ? (
+                    <div className="live-demo-placeholder">
+                        <p>The demo map couldn't load. The server may be offline.</p>
+                    </div>
+                ) : !loaded ? (
                     <div className="live-demo-placeholder">
                         <div className="live-demo-spinner" />
                         <p>Loading map</p>
                     </div>
                 ) : (
-                    <MapView points={points} dims={dims} searchResults={searchResults} showVoronoi={showVoronoi} />
+                    <MapView points={points} dims={dims} searchResults={searchResults} showVoronoi={showVoronoi} onPointClick={openFullMap} />
                 )}
             </div>
 
             {/* Status bar */}
             <div className="live-demo-footer">
-                <span className="live-demo-status">
-                    {points2d ? `${points2d.length.toLocaleString()} drugs · ${dims}D` : ""}
-                </span>
-                <button className="live-demo-open" onClick={() => navigate("/map?demo=true")}>
+                <span className="live-demo-status">{status}</span>
+                <button className="btn btn-light btn-sm" onClick={() => openFullMap()}>
                     Open full map
                 </button>
             </div>
+        </XPWindow>
+    );
+}
+
+// ── How it works (former About page) ─────────────────────────────────────────
+
+const WINDOWS = [
+    { key: "readme",  title: "readme.txt",       className: "about-readme" },
+    { key: "how",     title: "how_it_works.exe", className: "about-how" },
+    { key: "local",   title: "run_locally.txt",  className: "about-local" },
+    { key: "stack",   title: "tech_stack.txt",   className: "about-stack" },
+];
+
+function AboutWindows({ navigate }) {
+    const [closed, setClosed] = useState([]);
+    const close = (key) => setClosed(c => [...c, key]);
+
+    const content = {
+        readme: (
+            <div className="prose">
+                <p>
+                    embeddedcosine turns any structured dataset into a navigable semantic map.
+                    Similar things cluster together. You search by meaning, not keywords.
+                    Built by one person, for anyone curious about their data.
+                </p>
+                <p>
+                    It started as a personal project to actually see what embedding models do to data.
+                    I wanted to watch ideas group together in space, and thought others might find that interesting too.
+                </p>
+                <p>
+                    It's completely free to use and{" "}
+                    <a href="https://github.com/mahiraskari/embeddedcosine" target="_blank" rel="noopener noreferrer">open source on GitHub</a>.
+                    Fork it, edit it, do whatever you want with it. If you build something cool with it or just want to say thanks,{" "}
+                    <button className="text-link" onClick={() => navigate("/support")}>supporting it</button>{" "}
+                    goes a long way.
+                </p>
+            </div>
+        ),
+        how: (
+            <>
+                <ol className="about-steps">
+                    {STEPS.map(([n, title, desc, tag]) => (
+                        <li key={n} className="about-step">
+                            <span className="about-step-n">{n}</span>
+                            <div className="about-step-title">{title}</div>
+                            <div className="about-step-desc">{desc}</div>
+                            {tag && <span className="about-step-tag">{tag}</span>}
+                        </li>
+                    ))}
+                </ol>
+                <p className="about-name-note">
+                    Steps 03 + 04 = <span>embedded</span> + <span>cosine</span> = embeddedcosine
+                </p>
+            </>
+        ),
+        local: (
+            <div className="prose">
+                <p>
+                    There is a local branch of this project made specifically to run it on your own machine
+                    without any of the account setup, server limits, or extra configuration.
+                    Follow the README commands in the link below to get started.
+                </p>
+                <p>
+                    No sign in, no file size limit, no rate limits. Everything runs on your CPU and is typically
+                    4–10x faster than the hosted version depending on your specs.
+                </p>
+                <p>
+                    <a className="about-mono-link" href="https://github.com/mahiraskari/embeddedcosine/tree/local" target="_blank" rel="noopener noreferrer">
+                        github.com/mahiraskari/embeddedcosine/tree/local
+                    </a>
+                </p>
+            </div>
+        ),
+        stack: (
+            <dl className="about-stack-list">
+                {STACK.map(([label, value]) => (
+                    <div key={label} className="about-stack-row">
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
+                    </div>
+                ))}
+            </dl>
+        ),
+    };
+
+    return (
+        <div className="about-grid">
+            {WINDOWS.filter(w => !closed.includes(w.key)).map(w => (
+                <XPWindow key={w.key} title={w.title} className={w.className} draggable onClose={() => close(w.key)}>
+                    {content[w.key]}
+                </XPWindow>
+            ))}
         </div>
     );
 }
 
+// ── Page ─────────────────────────────────────────────────────────────────────
+
 export default function LandingPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchParams] = useSearchParams();
-    const [session, setSession]     = useState(null);
-    const [showLogin, setShowLogin] = useState(searchParams.get("login") === "true");
+    // The login modal is driven by the URL (/?login=true), so nav links and protected-route redirects both open it
+    const showLogin = searchParams.get("login") === "true";
 
+    // Scroll to a section when arriving with a hash (/#how-it-works)
     useEffect(() => {
-        supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-            setSession(s ?? null);
-            if (s) setShowLogin(false);
-        });
-        return () => subscription.unsubscribe();
-    }, []);
+        if (!location.hash) return;
+        const el = document.getElementById(location.hash.slice(1));
+        if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }, [location.hash, location.key]);
 
+    const closeLogin = () => navigate("/", { replace: true });
 
     return (
-        <div className="landing">
+        <div className="page landing">
             {showLogin && (
                 <LoginModal
-                    onClose={() => setShowLogin(false)}
-                    onSuccess={() => { setShowLogin(false); navigate("/datasets"); }}
+                    onClose={closeLogin}
+                    onSuccess={() => navigate("/datasets")}
                 />
             )}
 
             <Navbar />
 
-            {/* Demo */}
-            <section className="section section-wide" id="demo">
-                <div className="landing-intro">
-                    <div>
-                        <h1 className="landing-intro-title">Drugs, mapped by their side effects</h1>
-                        <p className="landing-intro-sub">
-                            Each point is a drug. The closer two points sit, the more similar their side effects.
-                            Search a side effect to see which drugs match it most closely.
-                        </p>
+            <main className="page-main">
+                <header className="landing-intro xp-welcome">
+                    <div className="xp-welcome-inner">
+                    <p className="landing-byline">A personal project · free and open source</p>
+                    <h1 className="landing-title">
+                        Turn any spreadsheet into a map you can search by meaning
+                    </h1>
+                    <p className="landing-lede">
+                        Upload a CSV or JSON file. Every row becomes a dot, similar rows sit together,
+                        and you search by describing what you want. The demo below maps 2,807 drugs by their side effects.
+                    </p>
+                    <div className="landing-intro-actions">
+                        <button
+                            className="btn btn-light"
+                            onClick={() => document.getElementById("demo")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                        >
+                            Try the demo
+                        </button>
+                        <button className="text-link landing-intro-link" onClick={() => navigate("/datasets")}>
+                            Map your own data (free account)
+                        </button>
                     </div>
-                    <button className="landing-intro-link" onClick={() => navigate("/about")}>
-                        How it works
-                    </button>
-                </div>
-                <LiveDemo navigate={navigate} />
-            </section>
+                    </div>
+                </header>
 
-            {/* Footer */}
-            <footer className="landing-footer">
-                <span className="landing-nav-logo">embeddedcosine</span>
-            </footer>
+                <LiveDemo navigate={navigate} />
+
+                <section id="how-it-works" className="landing-section">
+                    <h2 className="landing-section-title">How it works</h2>
+                    <p className="page-sub">What embeddedcosine does to your data, the stack behind it, and how to run it yourself.</p>
+                    <AboutWindows navigate={navigate} />
+                </section>
+            </main>
+
+            <Footer />
         </div>
     );
 }

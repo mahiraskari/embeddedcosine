@@ -3,8 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { fetchProjects, renameProject, deleteProject, fetchProjectPreview } from "../api/client";
 import SetupView from "../components/SetupView";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import { pageTaskbar } from "../components/mapTaskbarStore";
 
-const DOT_COLORS = ["#818cf8","#a78bfa","#c084fc","#6366f1","#38bdf8","#34d399","#fbbf24","#f87171"];
+const THUMB_HEIGHT = 220;
+
+// Same position-based colouring as the main map: x sweeps teal → blue → violet → pink, y shifts lightness
+const hsl = (h, s, l) => `hsl(${h} ${s}% ${l}%)`;
 
 function MiniMap({ projectId }) {
     const canvasRef = useRef(null);
@@ -31,33 +36,39 @@ function MiniMap({ projectId }) {
     useEffect(() => {
         if (!pts || !canvasRef.current) return;
         const canvas = canvasRef.current;
+        // Draw at the real on-screen size (and pixel density) so the preview stays sharp at any card width
+        const dpr = window.devicePixelRatio || 1;
+        const cssW = canvas.clientWidth, cssH = canvas.clientHeight;
+        canvas.width = Math.round(cssW * dpr);
+        canvas.height = Math.round(cssH * dpr);
         const ctx = canvas.getContext("2d");
-        const W = canvas.width, H = canvas.height;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const W = cssW, H = cssH;
         ctx.clearRect(0, 0, W, H);
 
         // Normalise UMAP coordinates to canvas space with a small padding border
         const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
         const minX = Math.min(...xs), maxX = Math.max(...xs);
         const minY = Math.min(...ys), maxY = Math.max(...ys);
-        const pad = 8;
+        const pad = 16;
+        const spanX = (maxX - minX) || 1, spanY = (maxY - minY) || 1;
 
-        pts.forEach((p, i) => {
-            const cx = pad + ((p.x - minX) / (maxX - minX)) * (W - pad * 2);
-            const cy = pad + ((p.y - minY) / (maxY - minY)) * (H - pad * 2);
-            ctx.fillStyle = DOT_COLORS[i % DOT_COLORS.length];
-            ctx.globalAlpha = 0.7;
-            ctx.fillRect(cx - 1, cy - 1, 2, 2);
+        pts.forEach(p => {
+            const nx = (p.x - minX) / spanX, ny = (p.y - minY) / spanY;
+            const cx = pad + nx * (W - pad * 2);
+            const cy = pad + (1 - ny) * (H - pad * 2);
+            ctx.fillStyle = hsl(175 + nx * 150, 72, 72 - ny * 16);
+            ctx.globalAlpha = 0.85;
+            ctx.fillRect(cx - 1.5, cy - 1.5, 3, 3);
         });
         ctx.globalAlpha = 1;
     }, [pts]);
 
     return (
-        <div ref={wrapRef} style={{ width: "100%", height: 110 }}>
+        <div ref={wrapRef} style={{ width: "100%", height: THUMB_HEIGHT }}>
             <canvas
                 ref={canvasRef}
-                width={220}
-                height={110}
-                style={{ width: "100%", height: 110, display: "block" }}
+                style={{ width: "100%", height: THUMB_HEIGHT, display: "block" }}
             />
         </div>
     );
@@ -65,6 +76,15 @@ function MiniMap({ projectId }) {
 
 function ProjectCard({ project, onOpen, onDelete }) {
     const [name, setName] = useState(project.name);
+    const [minimized, setMinimized] = useState(false);
+
+    // "—" sends the card to the taskbar at the bottom of the screen
+    useEffect(() => {
+        const key = `dataset-${project.id}`;
+        if (minimized) pageTaskbar.add({ key, title: name, restore: () => setMinimized(false) });
+        else pageTaskbar.remove(key);
+    }, [minimized, name, project.id]);
+    useEffect(() => () => pageTaskbar.remove(`dataset-${project.id}`), [project.id]);
     const [editing, setEditing] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [hovering, setHovering] = useState(false);
@@ -88,6 +108,7 @@ function ProjectCard({ project, onOpen, onDelete }) {
         <div
             style={{
                 ...styles.card,
+                display: minimized ? "none" : undefined,
                 borderColor: hovering ? "var(--accent-line)" : "var(--line-strong)",
                 boxShadow: "var(--xp-shadow)",
             }}
@@ -121,8 +142,8 @@ function ProjectCard({ project, onOpen, onDelete }) {
                     </span>
                 )}
                 <div style={styles.titleBtns}>
-                    <span className="xp-title-btn" aria-hidden="true">—</span>
-                    <span className="xp-title-btn" role="button" aria-label="Open map" onClick={() => onOpen(project.id)}>□</span>
+                    <span className="xp-title-btn" role="button" aria-label="Minimize" title="Minimize" onClick={e => { e.stopPropagation(); setMinimized(true); }}>—</span>
+                    <span className="xp-title-btn" role="button" aria-label="Open map" title="Open map" onClick={() => onOpen(project.id)}>□</span>
                     <span
                         className="xp-title-btn xp-title-btn--close"
                         role="button"
@@ -175,9 +196,9 @@ function NewProjectCard({ onClick }) {
                     <span className="xp-title-btn xp-title-btn--close" aria-hidden="true">✕</span>
                 </div>
             </div>
-            <div style={{ ...styles.thumbArea, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 110 }}>
-                <span style={{ fontSize: 26, color: hovering ? "var(--accent-text)" : "var(--muted)", transition: "color 0.15s" }}>+</span>
-                <span style={{ fontSize: 11, color: hovering ? "var(--accent-text-hover)" : "var(--muted)", marginTop: 6, transition: "color 0.15s", fontFamily: "var(--mono)" }}>
+            <div style={{ ...styles.thumbArea, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: THUMB_HEIGHT }}>
+                <span style={{ fontSize: 32, color: hovering ? "var(--accent-text)" : "var(--muted)", transition: "color 0.15s" }}>+</span>
+                <span style={{ fontSize: 14, color: hovering ? "var(--accent-text-hover)" : "var(--muted)", marginTop: 8, transition: "color 0.15s", fontFamily: "var(--mono)" }}>
                     New dataset
                 </span>
             </div>
@@ -217,21 +238,22 @@ export default function ProjectsPage() {
     }
 
     return (
-        <div style={styles.page}>
+        <div className="page">
             <Navbar />
 
-            <div style={styles.content}>
-                <div style={styles.pageHeader}>
-                    <h1 style={styles.pageTitle}>Datasets</h1>
-                    <p style={styles.pageSubtitle}>
-                        Each dataset is mapped in semantic space.
-                        {projects.length > 0 && (
-                            <span style={{ color: projects.length >= 4 ? "var(--negative)" : "var(--muted)", marginLeft: 8 }}>
-                                {projects.length} / 4
-                            </span>
-                        )}
+            <main className="page-main">
+                <header style={styles.pageHeader}>
+                    <h1 className="page-title">Your datasets</h1>
+                    <p className="page-sub">
+                        Open a map, or add a new CSV or JSON file. Click a title to rename it.
                     </p>
-                </div>
+                    {!loading && (
+                        <p style={{ ...styles.counter, color: projects.length >= 4 ? "var(--negative)" : "var(--muted)" }}>
+                            {projects.length} of 4 datasets used
+                            {projects.length >= 4 && " · delete one to add another"}
+                        </p>
+                    )}
+                </header>
 
                 {loading ? (
                     <div style={styles.empty}>Loading…</div>
@@ -248,7 +270,9 @@ export default function ProjectsPage() {
                         ))}
                     </div>
                 )}
-            </div>
+            </main>
+
+            <Footer />
         </div>
     );
 }
@@ -266,7 +290,13 @@ const styles = {
         padding: "48px 28px",
     },
     pageHeader: {
-        marginBottom: 36,
+        marginBottom: 32,
+    },
+    counter: {
+        margin: "12px 0 0",
+        fontFamily: "var(--mono)",
+        fontSize: 12,
+        fontVariantNumeric: "tabular-nums",
     },
     pageTitle: {
         fontSize: 22, fontWeight: 600, color: "var(--text)",
@@ -277,8 +307,8 @@ const styles = {
     },
     grid: {
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-        gap: 16,
+        gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 360px), 1fr))",
+        gap: 24,
     },
     card: {
         background: "var(--card)",
@@ -333,7 +363,7 @@ const styles = {
     thumbArea: {
         background: "var(--bg-deep)",
         cursor: "pointer",
-        height: 110,
+        height: THUMB_HEIGHT,
         overflow: "hidden",
     },
     noMap: {
@@ -348,7 +378,7 @@ const styles = {
         borderTop: "1px solid var(--line)",
     },
     cardMeta: {
-        fontSize: 11, color: "var(--muted)", fontFamily: "var(--mono)",
+        fontSize: 12, color: "var(--muted)", fontFamily: "var(--mono)",
     },
     deleteConfirm: {
         display: "flex", alignItems: "center", gap: 4,

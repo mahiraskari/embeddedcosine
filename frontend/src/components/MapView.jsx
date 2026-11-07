@@ -5,7 +5,7 @@ import { OrbitControls, GizmoHelper, GizmoViewport, Html } from "@react-three/dr
 import { Delaunay } from "d3-delaunay";
 import * as THREE from "three";
 
-const DARK = "#0f0f0f";
+const DARK = "#07080d";
 
 // ── Shared hover tooltip ──────────────────────────────────────────────────────
 
@@ -43,14 +43,27 @@ function hslToHex(h, s, l) {
     return `#${f(0)}${f(8)}${f(4)}`;
 }
 
+// Colour by position: neighbours share a hue, so clusters read as regions.
+// x sweeps teal → blue → violet → pink, y shifts lightness. Uses the 1st–99th
+// percentile so a few outliers do not compress the gradient.
 function getColors(points) {
-    return points.map((_, i) => {
-        // Golden-angle steps remapped to teal → blue → purple → magenta (200–360°)
-        const hue = 200 + (i * 137.508) % 160;
-        const sat = 80 + (i * 7919) % 15;  // 80–95 — vivid on dark bg
-        const lit = 55 + (i * 6271) % 20;  // 55–75 — bright enough to see
-        return hslToHex(hue, sat, lit);
+    if (!points.length) return [];
+    const b = robustBounds(points);
+    const spanX = (b.maxX - b.minX) || 1, spanY = (b.maxY - b.minY) || 1;
+    const clamp = v => Math.max(0, Math.min(1, v));
+    return points.map(p => {
+        const nx = clamp((p.x - b.minX) / spanX);
+        const ny = clamp((p.y - b.minY) / spanY);
+        return hslToHex(175 + nx * 150, 72, 72 - ny * 16);
     });
+}
+
+// Percentile bounds of the 2D layout, used for colouring and the initial view
+function robustBounds(points, lo = 0.01, hi = 0.99) {
+    const xs = points.map(p => p.x).sort((a, b) => a - b);
+    const ys = points.map(p => p.y).sort((a, b) => a - b);
+    const at = (arr, q) => arr[Math.min(arr.length - 1, Math.max(0, Math.round(q * (arr.length - 1))))];
+    return { minX: at(xs, lo), maxX: at(xs, hi), minY: at(ys, lo), maxY: at(ys, hi) };
 }
 
 function useBounds(points) {
@@ -392,6 +405,15 @@ function Scene2D({ points, showVoronoi, searchResults, onPointClick, flyToRef })
             minY: minY - padY, maxY: maxY + padY,
         };
 
+        // Initial view frames the main body of points (1st–99th percentile) so a few
+        // outliers do not squash the cloud into a corner. Zooming out still reaches everything.
+        const rb = robustBounds(points);
+        const vpx = (rb.maxX - rb.minX) * 0.1, vpy = (rb.maxY - rb.minY) * 0.1;
+        const view = {
+            minX: Math.max(rb.minX - vpx, minX - padX), maxX: Math.min(rb.maxX + vpx, maxX + padX),
+            minY: Math.max(rb.minY - vpy, minY - padY), maxY: Math.min(rb.maxY + vpy, maxY + padY),
+        };
+
         // Build Voronoi once in data space — Delaunay triangulates the point set, then
         // voronoi() derives the dual graph. Large padding prevents boundary cells from being
         // clipped by the bounding box before the canvas clip rect takes over at render time.
@@ -442,8 +464,8 @@ function Scene2D({ points, showVoronoi, searchResults, onPointClick, flyToRef })
             dragmode: "pan",
                 // Pinning the initial range makes Plotly's built-in doubleClick reset snap back to
             // the padded data extent rather than autorange (which can include a lot of whitespace).
-            xaxis: { showgrid: false, zeroline: false, showticklabels: false, showspikes: false, range: [db.minX, db.maxX] },
-            yaxis: { showgrid: false, zeroline: false, showticklabels: false, showspikes: false, range: [db.minY, db.maxY] },
+            xaxis: { showgrid: false, zeroline: false, showticklabels: false, showspikes: false, range: [view.minX, view.maxX] },
+            yaxis: { showgrid: false, zeroline: false, showticklabels: false, showspikes: false, range: [view.minY, view.maxY] },
             margin: { l: 0, r: 0, t: 0, b: 0 },
         }, { displayModeBar: false, responsive: true, scrollZoom: true, doubleClick: "reset" });
 
